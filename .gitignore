@@ -1,0 +1,16 @@
+target/
+.classpath
+.project
+.settings/
+.checkstyle
+.fbprefs
+*~
+*#
+.DS_Store
+*.h2.db
+*.lock.db
+*.trace.db
+.idea
+*.iml
+*.pyc
+.dir-locals.el
