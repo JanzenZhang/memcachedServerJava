@@ -294,18 +294,18 @@ public class CommandProcessor implements Runnable {
             try {
                 processErrorCommand("CLIENT_ERROR", e.getMessage());
             } catch (IOException e1) {
-                LOGGER.severe(e.getMessage());
+                LOGGER.finer(e.getMessage());
             } catch (InterruptedException e1) {
                 Thread.currentThread().interrupt();
             }
         } catch (Exception e) {
             // Any other exceptions from handling the input goes out as server
             // error.
-            LOGGER.severe(e.getMessage());
+            LOGGER.finer(e.getMessage());
             try {
                 processErrorCommand("SERVER_ERROR", e.getMessage());
             } catch (IOException e1) {
-                LOGGER.severe("IOException processing error command: "
+                LOGGER.finer("IOException processing error command: "
                         + e1.getMessage());
             } catch (InterruptedException e1) {
                 Thread.currentThread().interrupt();
@@ -313,7 +313,7 @@ public class CommandProcessor implements Runnable {
                 try {
                     socketChannel.close();
                 } catch (IOException e2) {
-                    LOGGER.severe("IOException trying to close socketChannel"
+                    LOGGER.finer("IOException trying to close socketChannel"
                             + e2.getMessage());
                 }
                 selectionKey.cancel();

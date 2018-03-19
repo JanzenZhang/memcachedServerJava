@@ -13,7 +13,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import server.cache.Page;
 import server.cache.PageManager;
@@ -26,6 +28,9 @@ import server.cache.PageManager;
 public class PageManagerTest {
     PageManager pageManager;
 
+    @Rule
+    public final ExpectedException thrown = ExpectedException.none();
+
     /**
      * Test method for {@link server.cache.PageManager#getPage()}.
      * Test for no pages in pool.
@@ -33,9 +38,9 @@ public class PageManagerTest {
     @Test
     public final void testGetZeroPage() {
         final long maxGlobalCacheSize = 16 * 1024 * 1024 - 1;
+        thrown.expect(IllegalArgumentException.class);
         PageManager pageManager = PageManager.getInstance(maxGlobalCacheSize);
-        Page page = pageManager.getPage();
-        assert (page == null);
+        pageManager.getPage();
     }
 
     /**

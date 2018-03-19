@@ -42,6 +42,7 @@ public final class Server {
             @Override
             public void run() {
                 connectionManager.stopAsync().awaitTerminated();
+                LOGGER.info("Memcached server stopped");
             }
         };
         Runtime.getRuntime().addShutdownHook(new Thread(shutdownRunnable));
@@ -50,7 +51,7 @@ public final class Server {
     }
 
     public static void main(final String[] args) throws IOException {
-        LOGGER.finer("Memcached server starting ...");
+        LOGGER.info("Memcached server starting ...");
         Server server = getInstance();
         server.init();
         LOGGER.finer("Memcached server started");

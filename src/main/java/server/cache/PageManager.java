@@ -43,7 +43,7 @@ public final class PageManager {
     }
 
     public static PageManager getInstance(final long maxGlobalCacheSize) {
-        Preconditions.checkArgument(maxGlobalCacheSize > PAGE_SIZE);
+        Preconditions.checkArgument(maxGlobalCacheSize >= PAGE_SIZE);
 
         if (instance == null) {
             instance = new PageManager(maxGlobalCacheSize);
