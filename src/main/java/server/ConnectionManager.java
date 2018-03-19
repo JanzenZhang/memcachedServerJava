@@ -86,7 +86,7 @@ public final class ConnectionManager extends AbstractIdleService {
                 workerTasksQueue);
 
         configureServerSocket();
-        LOGGER.info("ConnectionManager singleton instance created");
+        LOGGER.finest("ConnectionManager singleton instance created");
     }
 
     public static ConnectionManager getInstance(
@@ -117,7 +117,7 @@ public final class ConnectionManager extends AbstractIdleService {
     }
 
     public void listenToSockets() {
-        LOGGER.info("ConnectionManager listenToSockets:");
+        LOGGER.finest("ConnectionManager listenToSockets:");
         while (true) {
             try {
                 // Blocking call
@@ -133,13 +133,13 @@ public final class ConnectionManager extends AbstractIdleService {
                             SocketChannel client =
                                     serverSocketChannel.accept();
                             assert (client != null);
-                            LOGGER.info("Accepted client request: "
+                            LOGGER.finest("Accepted client request: "
                                     + client.socket().getLocalAddress() + " : "
                                     + client.socket().getLocalPort());
                             client.configureBlocking(false);
                             client.register(selector, SelectionKey.OP_READ);
                         } else if (key.isReadable()) {
-                            LOGGER.info("Thread: "
+                            LOGGER.finest("Thread: "
                                     + Thread.currentThread().getId()
                                     + " : client request for READ: ");
                             // Until data on this channel is consumed, do not
@@ -167,7 +167,7 @@ public final class ConnectionManager extends AbstractIdleService {
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClosedSelectorException e) {
-                LOGGER.info("Time to wrap up. Bye bye to listenToSockets");
+                LOGGER.finest("Time to wrap up. Bye bye to listenToSockets");
                 break;
             }
         }
@@ -175,19 +175,19 @@ public final class ConnectionManager extends AbstractIdleService {
 
     @Override
     protected void startUp() {
-        LOGGER.info("Connection Manager starting ...");
+        LOGGER.finest("Connection Manager starting ...");
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 listenToSockets();
             }
         });
-        LOGGER.info("Connection Manager started");
+        LOGGER.finest("Connection Manager started");
     }
 
     @Override
     protected void shutDown() throws InterruptedException, IOException {
-        LOGGER.info("Connection Manager shutting down ...");
+        LOGGER.finest("Connection Manager shutting down ...");
         if (serverSocket != null) {
             serverSocket.close();
         }
@@ -200,7 +200,7 @@ public final class ConnectionManager extends AbstractIdleService {
                 SocketChannel socketChannel = (SocketChannel) channel;
                 Socket socket = socketChannel.socket();
                 String remoteHost = socket.getRemoteSocketAddress().toString();
-                LOGGER.info("closing socket: " + remoteHost);
+                LOGGER.finest("closing socket: " + remoteHost);
                 socketChannel.close();
                 key.cancel();
             } else {
@@ -220,6 +220,6 @@ public final class ConnectionManager extends AbstractIdleService {
             LOGGER.warning("Executor cannot be shut down within"
                     + " timeout: 1 min");
         }
-        LOGGER.info("Connection Manager shut down");
+        LOGGER.finest("Connection Manager shut down");
     }
 }

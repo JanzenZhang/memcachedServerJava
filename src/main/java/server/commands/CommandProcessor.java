@@ -44,16 +44,16 @@ public class CommandProcessor implements Runnable {
     private boolean validKey(final String key) {
         Pattern p = Pattern.compile("[^a-z0-9]", Pattern.CASE_INSENSITIVE);
         if (p.matcher(key).find()) {
-            LOGGER.info("Invalid Key: " + key
+            LOGGER.finest("Invalid Key: " + key
                     + " contains control characters");
             return false;
         } else if (key.contains(" ")) {
             // Should not be the case as our logic uses space as delimiter
             // to extract subparts of the command HEADER.
-            LOGGER.info("Invalid Key: " + key + " contains spaces");
+            LOGGER.finest("Invalid Key: " + key + " contains spaces");
             return false;
         } else if (key.length() > 250) {
-            LOGGER.info("Invalid Key: " + key + " size: " + key.length()
+            LOGGER.finest("Invalid Key: " + key + " size: " + key.length()
                     + " > 250");
             return false;
         }
@@ -83,7 +83,7 @@ public class CommandProcessor implements Runnable {
                 Thread.yield();
                 continue;
             } else if (bytesRead == -1) {
-                LOGGER.info("Client abruptly closed the connection"
+                LOGGER.finest("Client abruptly closed the connection"
                         + " while request was being processed!");
                 socketChannel.close();
                 // Since the channel is closed, server will not bother
@@ -91,14 +91,14 @@ public class CommandProcessor implements Runnable {
                 // received enough data to process it.
                 return null;
             }
-            LOGGER.info("bytesRead: " + bytesRead);
-            LOGGER.info("data content: " + new String(dataBytes));
+            LOGGER.finest("bytesRead: " + bytesRead);
+            LOGGER.finest("data content: " + new String(dataBytes));
             totalBytesRead += bytesRead;
             if (totalBytesRead == bytesToRead) {
                 break;
             }
         }
-        LOGGER.info("totalBytesRead: " + totalBytesRead);
+        LOGGER.finest("totalBytesRead: " + totalBytesRead);
         return dataBytes;
     }
 
@@ -124,7 +124,7 @@ public class CommandProcessor implements Runnable {
         while (true) {
             int bytesRead = socketChannel.read(buf);
             if (bytesRead == 0 || bytesRead == -1) {
-                LOGGER.info("readBytesFromChannel bytesRead: " + bytesRead);
+                LOGGER.finest("readBytesFromChannel bytesRead: " + bytesRead);
                 break;
             }
             // Enable buf to be read.
@@ -138,7 +138,7 @@ public class CommandProcessor implements Runnable {
                 }
             } else if (curDelimIndex != 0) {
                 // Input has partial delimiter and its disallowed by protocol.
-                LOGGER.info("Invalid client input. Has control characters");
+                LOGGER.finest("Invalid client input. Has control characters");
                 processErrorCommand("CLIENT_ERROR",
                         "Input cannot have control characters: "
                     + new String(resBuffer.array()));
@@ -162,7 +162,7 @@ public class CommandProcessor implements Runnable {
 
         byte[] keyBytes = readBytesFromChannel(/*delimiterStr=*/ "\r\n");
         String keyStr = new String(keyBytes, AbstractCommand.CHARSET);
-        LOGGER.info("processing get command: " + keyStr + " bytes: "
+        LOGGER.finest("processing get command: " + keyStr + " bytes: "
                 + keyBytes);
         CommandGet commandGet = new CommandGet(cacheManager,
                 socketChannel);
@@ -173,7 +173,7 @@ public class CommandProcessor implements Runnable {
     private void processSetCommand() throws IOException, InterruptedException {
 //        <key> <flags> <exptime> <bytes> [noreply]\r\n
 //        <data block>\r\n
-        LOGGER.info("processing set command ...");
+        LOGGER.finest("processing set command ...");
 
         // <key> and consume the leading space.
         byte[] keyBytes = readBytesFromChannel(/*delimiterStr=*/ " ");
@@ -182,7 +182,7 @@ public class CommandProcessor implements Runnable {
             return;
         }
         String keyStr = new String(keyBytes, AbstractCommand.CHARSET);
-        LOGGER.info("Thread: " + Thread.currentThread().getId()
+        LOGGER.finest("Thread: " + Thread.currentThread().getId()
                 + " received key on server: -" + keyStr + "-" + " keyBytes: "
                 + keyBytes);
         if (!validKey(keyStr)) {
@@ -198,7 +198,7 @@ public class CommandProcessor implements Runnable {
             return;
         }
         String remCommandStr = new String(resBytes, AbstractCommand.CHARSET);
-        LOGGER.info("Thread: " + Thread.currentThread().getId()
+        LOGGER.finest("Thread: " + Thread.currentThread().getId()
                 + " received on server: size: " + remCommandStr.length()
                 + " Str:-" + remCommandStr + "-");
 
@@ -214,20 +214,20 @@ public class CommandProcessor implements Runnable {
         int bytes;
         try {
             flags = Short.decode(subParts[0]);
-            LOGGER.info("flags: " + flags);
+            LOGGER.finest("flags: " + flags);
 
             expTime = Long.parseLong(subParts[1]);
-            LOGGER.info("expTime: " + expTime);
+            LOGGER.finest("expTime: " + expTime);
 
             // Note that bytes can be 0, indicating empty data block.
             bytes = Integer.parseInt(subParts[2]);
-            LOGGER.info("bytes: " + bytes);
+            LOGGER.finest("bytes: " + bytes);
 
             if (subParts.length == 4) {
                 ; // Ignore noreply flag for this assignment.
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(e.getMessage());
+            LOGGER.finest(e.getMessage());
             processErrorCommand("CLIENT_ERROR",
                     "Invalid number format on non-key arguments");
             return;
@@ -249,9 +249,9 @@ public class CommandProcessor implements Runnable {
 
     private void processErrorCommand(final String status, final String msg)
             throws IOException, InterruptedException {
-        LOGGER.info("processing error command");
+        LOGGER.finest("processing error command");
         if (msg != null) {
-            LOGGER.info(msg);
+            LOGGER.finest(msg);
         }
         CommandError commandError = new CommandError(cacheManager,
                 socketChannel);
@@ -275,7 +275,7 @@ public class CommandProcessor implements Runnable {
         } else if (commandTypeStr.equals("set ")) {
             processSetCommand();
         } else {
-            LOGGER.info("Only accepts get or set command :-" + commandTypeStr
+            LOGGER.finest("Only accepts get or set command :-" + commandTypeStr
                     + "-" + " length: " + commandType.length);
             processErrorCommand("ERROR", null);
         }
@@ -285,7 +285,7 @@ public class CommandProcessor implements Runnable {
     @Override
     public final void run() {
         try {
-            LOGGER.info("Thread: " + Thread.currentThread().getId()
+            LOGGER.finest("Thread: " + Thread.currentThread().getId()
                     + " running ...");
             handleInputFromClient();
         } catch (InterruptedException e) {

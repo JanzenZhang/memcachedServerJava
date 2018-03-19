@@ -37,7 +37,7 @@ public abstract class AbstractCommand {
 
         while (data.hasRemaining()) {
             int n = socketChannel.write(data);
-            LOGGER.info("Wrote bytes: " + n);
+            LOGGER.finest("Wrote bytes: " + n);
         }
         data.clear();
     }

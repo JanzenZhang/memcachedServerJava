@@ -25,7 +25,7 @@ public final class CommandError extends AbstractCommand {
         assert (status != null);
         //errorMsg can be null for status=ERROR
 
-        LOGGER.info("responding error message to client...");
+        LOGGER.finest("responding error message to client...");
 
         CharBuffer charBuf = null;
         if (status.equals("ERROR")) {

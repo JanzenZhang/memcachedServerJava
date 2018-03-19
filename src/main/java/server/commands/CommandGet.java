@@ -27,16 +27,16 @@ public final class CommandGet extends AbstractCommand {
 
     void process(final CommandGetRequest request)
             throws IOException, InterruptedException {
-        LOGGER.info("processing ...");
+        LOGGER.finest("processing ...");
         byte[] keyBytes = request.getKey();
 
         String key = new String(keyBytes, AbstractCommand.CHARSET);
         CacheValue value = getCache().get(key);
         if (value != null) {
-            LOGGER.info("cache fetched for key: " + key + " value: "
+            LOGGER.finest("cache fetched for key: " + key + " value: "
                     + value.getFlag());
         } else {
-            LOGGER.info("cache cannot fetch for key: " + key);
+            LOGGER.finest("cache cannot fetch for key: " + key);
         }
         respondToClient(keyBytes, value);
     }
@@ -49,7 +49,7 @@ public final class CommandGet extends AbstractCommand {
      */
     void respondToClient(final byte[] key, final CacheValue value)
             throws IOException {
-        LOGGER.info("responding to client...");
+        LOGGER.finest("responding to client...");
         CharBuffer cbuf;
         final String newLineMarker = "\r\n";
         final String endMarker = "END";
@@ -74,8 +74,8 @@ public final class CommandGet extends AbstractCommand {
             metadata.put(CHARSET.encode(newLineMarker));
             metadata.flip();
 
-            LOGGER.info("keyBytes: " + key);
-            LOGGER.info("responded to client: "
+            LOGGER.finest("keyBytes: " + key);
+            LOGGER.finest("responded to client: "
                     + new String(metadata.array(), AbstractCommand.CHARSET));
             writeToSocket(metadata);
             metadata = null;
@@ -85,7 +85,7 @@ public final class CommandGet extends AbstractCommand {
         ByteBuffer endMarkBuf = CHARSET.encode(cbuf);
         writeToSocket(endMarkBuf);
         endMarkBuf = null;
-        LOGGER.info("Responded to client for key: "
+        LOGGER.finest("Responded to client for key: "
                 + new String(key, AbstractCommand.CHARSET));
     }
 }

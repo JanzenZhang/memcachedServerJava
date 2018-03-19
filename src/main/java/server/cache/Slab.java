@@ -60,7 +60,7 @@ public final class Slab {
      *          available.
      */
     public synchronized CacheSlot getSlot() {
-        LOGGER.info("getSlot : " + slotSize + " freeSLots: "
+        LOGGER.finest("getSlot : " + slotSize + " freeSLots: "
                 + freeCacheSlotList.size());
         if (freeCacheSlotList.isEmpty()) {
             if (!isGlobalPoolEmpty) {
@@ -68,7 +68,7 @@ public final class Slab {
                 if (newPage != null) {
                     addToFreeSlotOffsetList(newPage);
                 } else {
-                    LOGGER.info("Global Pool marked empty");
+                    LOGGER.finest("Global Pool marked empty");
                     isGlobalPoolEmpty = true;
                 }
             }

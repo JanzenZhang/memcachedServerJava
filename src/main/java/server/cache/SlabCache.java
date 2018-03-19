@@ -40,19 +40,19 @@ public final class SlabCache implements Cache {
         this.lruKeyList = new LinkedList<>();
         this.lruKeyListSemaphore = new Semaphore(1);
 
-        LOGGER.info("Slabcache instance created: " + slotSize);
+        LOGGER.finest("Slabcache instance created: " + slotSize);
     }
 
     @Override
     public CacheValue get(final String key) throws InterruptedException {
-        LOGGER.info("slabcache: " + getSlotSize() + " size: "
+        LOGGER.finest("slabcache: " + getSlotSize() + " size: "
                 + slabCacheMap.size());
 
         CacheSlot cacheSlot;
         synchronized (slabCacheMap) {
             cacheSlot = slabCacheMap.get(key);
             if (cacheSlot == null) {
-                LOGGER.info("key: " + key + " not found in slabcache: "
+                LOGGER.finest("key: " + key + " not found in slabcache: "
                         + getSlotSize());
                 return null;
             }
@@ -78,7 +78,7 @@ public final class SlabCache implements Cache {
         buf.limit(offset + slab.getSlotSize());
         try {
             CacheValue cacheValue = CacheValue.deserialize(buf);
-            LOGGER.info("key: " + key + " found in slabcache: "
+            LOGGER.finest("key: " + key + " found in slabcache: "
                     + getSlotSize());
             return cacheValue;
         } catch (BufferUnderflowException e) {
@@ -105,14 +105,14 @@ public final class SlabCache implements Cache {
                 // Get either a new CacheSlot or reuse one from LRU.
                 cacheSlot = slab.getSlot();
                 if (cacheSlot == null) {
-                    LOGGER.info("LRU kicked in slab: " + getSlotSize());
+                    LOGGER.finest("LRU kicked in slab: " + getSlotSize());
                     // All memory exhausted. Evict one and reuse it.
                     lruKeyListSemaphore.acquire();
                     if (lruKeyList.isEmpty()) {
                         // This can happen when other slabs have taken up all
                         // the required memory before even the first request is
                         // made on this slab.
-                        LOGGER.info("SlabCache set failing to cache"
+                        LOGGER.finest("SlabCache set failing to cache"
                                 + " because of lack of memory. Key: " + key);
                         lruKeyListSemaphore.release();
                         return false;
@@ -139,8 +139,8 @@ public final class SlabCache implements Cache {
         buf.limit(offset + slab.getSlotSize());
         try {
             CacheValue.serialize(value, buf);
-            LOGGER.info("Key: " + key + " set in slabCache: " + getSlotSize());
-            LOGGER.info("Size of slabcache: " + slabCacheMap.size());
+            LOGGER.finest("Key: " + key + " set in slabCache: " + getSlotSize());
+            LOGGER.finest("Size of slabcache: " + slabCacheMap.size());
             return true;
         } catch (BufferOverflowException e) {
             LOGGER.severe(e.getMessage());

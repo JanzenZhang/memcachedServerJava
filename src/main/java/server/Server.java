@@ -26,7 +26,7 @@ public final class Server {
     private Server() throws IOException {
         cacheManager = CacheManager.getInstance();
         connectionManager = ConnectionManager.getInstance(cacheManager);
-        LOGGER.info("Memcached server singleton instance created");
+        LOGGER.finest("Memcached server singleton instance created");
     }
 
     public static Server getInstance() throws IOException {

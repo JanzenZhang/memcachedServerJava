@@ -49,7 +49,7 @@ public final class PageManager {
             instance = new PageManager(maxGlobalCacheSize);
         }
         assert (instance.maxGlobalCacheSize == maxGlobalCacheSize);
-        LOGGER.info("PageManager singleton instance created");
+        LOGGER.finest("PageManager singleton instance created");
 
         return instance;
     }
@@ -59,7 +59,7 @@ public final class PageManager {
      * @return new page if available, null otherwise
      */
     public synchronized Page getPage() {
-        LOGGER.info("getPage: " + pagePool.size());
+        LOGGER.finest("getPage: " + pagePool.size());
         return pagePool.poll();
     }
 

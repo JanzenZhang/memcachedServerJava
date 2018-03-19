@@ -39,12 +39,12 @@ public class CommandSet extends AbstractCommand {
         } else {
             respondToClient(CommandSetResponse.NOT_STORED);
         }
-        LOGGER.info("Responded to client for key: " + request.key);
+        LOGGER.finest("Responded to client for key: " + request.key);
     }
 
     private void respondToClient(final CommandSetResponse response)
             throws IOException {
-        LOGGER.info("responding to client...");
+        LOGGER.finest("responding to client...");
 
         CharBuffer charBuf;
         if (response == CommandSetResponse.STORED) {

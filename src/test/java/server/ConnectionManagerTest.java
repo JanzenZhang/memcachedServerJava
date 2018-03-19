@@ -98,9 +98,9 @@ public class ConnectionManagerTest {
         assert(data.position() == 0);
         while (data.hasRemaining()) {
             int n = socketChannel.write(data);
-            LOGGER.info("Wrote bytes: " + n);
+            LOGGER.finest("Wrote bytes: " + n);
         }
-        LOGGER.info("Wrote to server: " + new String(data.array(), charset));
+        LOGGER.finest("Wrote to server: " + new String(data.array(), charset));
         data.clear();
     }
 
@@ -128,7 +128,7 @@ public class ConnectionManagerTest {
                 Thread.yield();
                 continue;
             } else if (bytesRead == -1) {
-                LOGGER.info("Server abruptly closed the connection" +
+                LOGGER.finest("Server abruptly closed the connection" +
                         " while request was being processed!");
                 return null;
             }
@@ -138,7 +138,7 @@ public class ConnectionManagerTest {
                 break;
             }
         }
-        LOGGER.info("totalBytesRead: " + totalBytesRead);
+        LOGGER.finest("totalBytesRead: " + totalBytesRead);
         return dataBytes;
     }
 
@@ -163,7 +163,7 @@ public class ConnectionManagerTest {
         while (true) {
             int bytesRead = socketChannel.read(buf);
             if (bytesRead == 0 || bytesRead == -1) {
-                LOGGER.info("readBytesFromChannel bytesRead: " + bytesRead);
+                LOGGER.finest("readBytesFromChannel bytesRead: " + bytesRead);
                 break;
             }
             // Enable buf to be read.
@@ -177,7 +177,7 @@ public class ConnectionManagerTest {
                 }
             } else if (curDelimIndex != 0) {
                 // Input has partial delimiter and its disallowed by protocol.
-                LOGGER.info("Invalid server input. Has control characters");
+                LOGGER.finest("Invalid server input. Has control characters");
                 fail("Input cannot have control characters: " +
                     new String(resBuffer.array()));
             } else {
@@ -248,7 +248,7 @@ public class ConnectionManagerTest {
 
         String keyStr = "123";
         byte[] keyBytes = keyStr.getBytes(charset);
-        LOGGER.info("key bytes : " + keyBytes + " length: " + keyBytes.length);
+        LOGGER.finest("key bytes : " + keyBytes + " length: " + keyBytes.length);
         helperSetRequest(socketChannel, keyBytes, /*valueBytes=*/ 12,
                 /*flags=*/ (short)1, /*expTime=*/ 0);
 //        helperSetRequest2(socketChannel, keyStr, /*bytes=*/ 12,
@@ -261,7 +261,7 @@ public class ConnectionManagerTest {
         }
 
         final String commandResponse = new String(respBuf, charset);
-        LOGGER.info("commandResponse: " + commandResponse);
+        LOGGER.finest("commandResponse: " + commandResponse);
 
         assert(commandResponse.equals("STORED"));
     }
@@ -291,7 +291,7 @@ public class ConnectionManagerTest {
         }
 
         String commandResponse = new String(respBuf, charset);
-        LOGGER.info("commandResponse: " + commandResponse);
+        LOGGER.finest("commandResponse: " + commandResponse);
         assert(commandResponse.equals("STORED"));
     }
 
@@ -321,7 +321,7 @@ public class ConnectionManagerTest {
         byteBufToSend.put(charset.encode(newLineMarker));
         byteBufToSend.flip();
 
-        LOGGER.info("Writing get metadata to server: " +
+        LOGGER.finest("Writing get metadata to server: " +
                 new String(byteBufToSend.array()));
         writeToSocket(byteBufToSend, socketChannel);
 
@@ -354,7 +354,7 @@ public class ConnectionManagerTest {
         final byte[] keyBytes = keyStr.getBytes(keyCharset);
         final int valueBytes = 100;
         final short flags = 1;
-        LOGGER.info("set key: " + keyBytes);
+        LOGGER.finest("set key: " + keyBytes);
         final byte[] cachedValue = helperSetRequest(socketChannel, keyBytes,
                 valueBytes, flags, /*expTime=*/ 0);
 
@@ -365,7 +365,7 @@ public class ConnectionManagerTest {
         }
 
         String commandResponse = new String(respBuf, charset);
-        LOGGER.info("commandResponse: " + commandResponse);
+        LOGGER.finest("commandResponse: " + commandResponse);
         assert(commandResponse.equals("STORED"));
 
         // Now issue a get for this set to ensure it's indeed cached.
@@ -382,9 +382,9 @@ public class ConnectionManagerTest {
         byteBufToSend.put(charset.encode(newLineMarker));
         byteBufToSend.flip();
 
-        LOGGER.info("Writing get command to server: " +
+        LOGGER.finest("Writing get command to server: " +
                 new String(byteBufToSend.array()));
-        LOGGER.info("get key: " + keyBytes);
+        LOGGER.finest("get key: " + keyBytes);
         writeToSocket(byteBufToSend, socketChannel);
 
         // Response format can be either :
@@ -398,9 +398,9 @@ public class ConnectionManagerTest {
             fail("Invalid response from server on get command");
         }
         String readBytesStr = new String(readBytes, charset);
-        LOGGER.info("command first 5 bytes: " + readBytesStr);
+        LOGGER.finest("command first 5 bytes: " + readBytesStr);
         if (readBytesStr.equals("END\r\n")) {
-            LOGGER.info("Client received END. Cache element not found!");
+            LOGGER.finest("Client received END. Cache element not found!");
             fail("Expecting a cache hit, but we have a miss here");
         } else if (readBytesStr.equals("VALUE")) {
             // Ignore whitespace after VALUE
@@ -410,10 +410,10 @@ public class ConnectionManagerTest {
         final byte[] storedKeyBytes = readBytesFromChannel(socketChannel,
                 /*delimiterStr=*/ " ");
         String storedKeyStr = new String(storedKeyBytes, charset);
-        LOGGER.info("received key in get command: " + storedKeyStr);
-        LOGGER.info("stored Key: " + storedKeyStr + " expected key: " + keyStr);
-        LOGGER.info("stored Key bytes: " + storedKeyBytes + " expected key bytes: " + keyBytes);
-        LOGGER.info("stored Key bytes len: " + storedKeyBytes.length +
+        LOGGER.finest("received key in get command: " + storedKeyStr);
+        LOGGER.finest("stored Key: " + storedKeyStr + " expected key: " + keyStr);
+        LOGGER.finest("stored Key bytes: " + storedKeyBytes + " expected key bytes: " + keyBytes);
+        LOGGER.finest("stored Key bytes len: " + storedKeyBytes.length +
                 " expected key bytes len: " + keyBytes.length);
        assert(storedKeyStr.equals(keyStr));
 
@@ -430,11 +430,11 @@ public class ConnectionManagerTest {
         }
 
         final short storedFlags = Short.decode(subParts[0]);
-        LOGGER.info("received flags in get command:: " + storedFlags);
+        LOGGER.finest("received flags in get command:: " + storedFlags);
         assert(storedFlags == flags);
 
         final int storedBytes = Integer.parseInt(subParts[1]);
-        LOGGER.info("received bytes in get command:: " + storedBytes);
+        LOGGER.finest("received bytes in get command:: " + storedBytes);
         assert(storedBytes == valueBytes);
 
         if (storedBytes != 0) {
@@ -454,7 +454,7 @@ public class ConnectionManagerTest {
         }
         String endMarkerStr = new String(endMarker, charset);
 
-        LOGGER.info("endMarker: " + endMarkerStr);
+        LOGGER.finest("endMarker: " + endMarkerStr);
         assert(endMarkerStr.equals("END\r\n"));
     }
 
