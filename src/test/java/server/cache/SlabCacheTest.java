@@ -30,19 +30,19 @@ import server.cache.SlabCache;
  *
  */
 public class SlabCacheTest {
-    private final int pageCount = 10;
-    private final long maxGlobalCacheSize =
-            pageCount * PageManager.getPageSize();
+    private static final int PAGE_COUNT = 10;
+    private static final long MAX_GLOBAL_CACHE_SIZE =
+            PAGE_COUNT * PageManager.getPageSize();
     private final PageManager pageManager = PageManager.getInstance(
-            maxGlobalCacheSize);
+            MAX_GLOBAL_CACHE_SIZE);
     private SlabCache slabCache;
-    private static final int slotSize = PageManager.getPageSize() / 16;
+    private static final int SLOT_SIZE = PageManager.getPageSize() / 16;
 
     /**
      */
     @Before
     public void setUp() {
-        slabCache = new SlabCache(slotSize, pageManager);
+        slabCache = new SlabCache(SLOT_SIZE, pageManager);
     }
 
     /**
@@ -66,9 +66,9 @@ public class SlabCacheTest {
         slabCache.set(key, expectedValue);
         
         CacheValue cachedValue = slabCache.get(key);
-        if (! expectedValue.equals(cachedValue)) {
-            fail("cachedValue: " + cachedValue +
-                    " expectedValue: " + expectedValue);
+        if (!expectedValue.equals(cachedValue)) {
+            fail("cachedValue: " + cachedValue
+                    + " expectedValue: " + expectedValue);
         }
     }
 
@@ -81,12 +81,12 @@ public class SlabCacheTest {
         final short flags = 123;
         final int bytes = 10;
         final byte[] data = RandomUtils.nextBytes(bytes);
-        
+
         CacheValue value = new CacheValue(flags, bytes, data);
         slabCache.set(key, value);
-        
+
         CacheValue dummyValue = slabCache.get(key + "-dummy");
-        assert(dummyValue == null);
+        assert (dummyValue == null);
     }
 
     private static String generateRandomKey(ArrayList<String> keys) {
@@ -127,7 +127,7 @@ public class SlabCacheTest {
                 try {
                     CacheValue cachedValue = slabCache.get(key);
                     CacheValue expectedValue = testMap.get(key);
-                    if (! expectedValue.equals(cachedValue)) {
+                    if (!expectedValue.equals(cachedValue)) {
                         fail("cachedValue: " + cachedValue +
                                 " expectedValue: " + expectedValue);
                     }
@@ -153,8 +153,8 @@ public class SlabCacheTest {
      */
     @Test
     public final void testSetLRU() throws InterruptedException {
-        final int slotsPerPage = PageManager.getPageSize() / slotSize;
-        final int chunkCount = slotsPerPage * pageCount;
+        final int slotsPerPage = PageManager.getPageSize() / SLOT_SIZE;
+        final int chunkCount = slotsPerPage * PAGE_COUNT;
         HashMap<String, CacheValue> testMap = new HashMap<>();
 
         for (int i=0; i<chunkCount; i++) {
@@ -173,7 +173,7 @@ public class SlabCacheTest {
             String key = "test-" + i;
             CacheValue cachedValue = slabCache.get(key);
             CacheValue expectedValue = testMap.get(key);
-            if (! expectedValue.equals(cachedValue)) {
+            if (!expectedValue.equals(cachedValue)) {
                 fail("cachedValue: " + cachedValue +
                         " expectedValue: " + expectedValue);
             }
@@ -210,8 +210,8 @@ public class SlabCacheTest {
         ExecutorService service = Executors.newFixedThreadPool(3);
         List<Future<?>> futureList = new LinkedList<>();
 
-        final int slotsPerPage = PageManager.getPageSize() / slotSize;
-        final int chunkCount = slotsPerPage * pageCount;
+        final int slotsPerPage = PageManager.getPageSize() / SLOT_SIZE;
+        final int chunkCount = slotsPerPage * PAGE_COUNT;
         Map<String, CacheValue> testMap = Collections.synchronizedMap(
                 new HashMap<>());
 
@@ -247,12 +247,12 @@ public class SlabCacheTest {
             CacheValue cachedValue = slabCache.get(key);
             CacheValue expectedValue = testMap.get(key);
             if (!expectedValue.equals(cachedValue)) {
-                fail("cachedValue: " + cachedValue + " expectedValue: " +
-                        expectedValue);
+                fail("cachedValue: " + cachedValue + " expectedValue: "
+                        + expectedValue);
             }
         }
     }
-    
+
     /**
      * Test for parallel get and set calls.
      * Test method for {@link server.cache.SlabCache#set(java.lang.String, server.cache.CacheValue)}.
@@ -263,8 +263,8 @@ public class SlabCacheTest {
         ExecutorService service = Executors.newFixedThreadPool(3);
         List<Future<?>> futureList = new LinkedList<>();
 
-        final int slotsPerPage = PageManager.getPageSize() / slotSize;
-        final int chunkCount = slotsPerPage * pageCount * 10;
+        final int slotsPerPage = PageManager.getPageSize() / SLOT_SIZE;
+        final int chunkCount = slotsPerPage * PAGE_COUNT * 10;
         Map<String, CacheValue> testMap = Collections.synchronizedMap(
                 new HashMap<>());
 

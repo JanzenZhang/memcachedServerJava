@@ -54,15 +54,15 @@ public class MemcachedFixedSizeSlabLRUPagesTest {
     @Test
     public final void testSlabSizes() throws InterruptedException {
         Collection<SlabCache> slabcaches = cache.getSlabCaches();
-        assert(slabcaches != null);
-        assert(slabcaches.size() ==
+        assert (slabcaches != null);
+        assert (slabcaches.size() ==
                 MemcachedFixedSizeSlabLRUPages.getMaxSlabs());
 
         for (SlabCache slabcache : slabcaches) {
             assert (slabcache.getCacheSize() == 0);
         }
 
-        for (int i=4; i<=22; i+=2) {
+        for (int i = 4; i <= 22; i += 2) {
             int slotSize = (int) Math.pow(2, i);
 
             String key = "hello-" + slotSize;
@@ -77,7 +77,8 @@ public class MemcachedFixedSizeSlabLRUPagesTest {
 
         for (SlabCache slabCache : slabcaches) {
             assert (slabCache.getCacheSize() == 1);
-            System.out.println("slabCache: " + slabCache.getSlotSize() + " size: " + slabCache.getCacheSize());
+            System.out.println("slabCache: " + slabCache.getSlotSize()
+                + " size: " + slabCache.getCacheSize());
         }
     }
 
@@ -89,7 +90,7 @@ public class MemcachedFixedSizeSlabLRUPagesTest {
     public final void testSlabSizeBoundaries() throws InterruptedException {
         Collection<SlabCache> slabcaches = cache.getSlabCaches();
 
-        for (int i=4; i<=20; i+=2) {
+        for (int i = 4; i <= 20; i += 2) {
             int slotSize = (int) Math.pow(2, i);
 
             String key = "hello-" + slotSize;
@@ -111,7 +112,8 @@ public class MemcachedFixedSizeSlabLRUPagesTest {
             } else {
                 assert (slabCache.getCacheSize() == 0);
             }
-            System.out.println("slabCache: " + slabCache.getSlotSize() + " size: " + slabCache.getCacheSize());
+            System.out.println("slabCache: " + slabCache.getSlotSize()
+                + " size: " + slabCache.getCacheSize());
         }
         
         // Ensure that cache elements sized larger than largest slotSized
@@ -127,7 +129,7 @@ public class MemcachedFixedSizeSlabLRUPagesTest {
         cache.set(key, value);
         
         CacheValue noValue = cache.get(key);
-        assert(noValue == null);
+        assert (noValue == null);
     }
 
     /**
@@ -139,7 +141,7 @@ public class MemcachedFixedSizeSlabLRUPagesTest {
 
         Collection<SlabCache> slabcaches = cache.getSlabCaches();
 
-        for (int i=4; i<=22; i+=2) {
+        for (int i = 4; i <= 22; i += 2) {
             int slotSize = (int) Math.pow(2, i);
 
             String key = "hello-" + slotSize;
@@ -153,21 +155,21 @@ public class MemcachedFixedSizeSlabLRUPagesTest {
             testMap.put(key, expectedValue);
 
             CacheValue cachedValue = cache.get(key);
-            if (! expectedValue.equals(cachedValue)) {
-                fail("cachedValue: " + cachedValue +
-                        " expectedValue: " + expectedValue);
+            if (!expectedValue.equals(cachedValue)) {
+                fail("cachedValue: " + cachedValue
+                        + " expectedValue: " + expectedValue);
             }
         }
 
         for (SlabCache slabCache : slabcaches) {
             final String key = "hello-" + slabCache.getSlotSize();
             CacheValue cachedValue = slabCache.get(key);
-            assert(cachedValue != null);
+            assert (cachedValue != null);
             CacheValue expectedValue = testMap.get(key);
-            assert(expectedValue != null);
+            assert (expectedValue != null);
             if (! expectedValue.equals(cachedValue)) {
-                fail("cachedValue: " + cachedValue +
-                        " expectedValue: " + expectedValue);
+                fail("cachedValue: " + cachedValue
+                        + " expectedValue: " + expectedValue);
             }
         }
     }

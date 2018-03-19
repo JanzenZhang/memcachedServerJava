@@ -13,8 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import server.cache.Page;
@@ -37,7 +35,7 @@ public class PageManagerTest {
         final long maxGlobalCacheSize = 16 * 1024 * 1024 - 1;
         PageManager pageManager = PageManager.getInstance(maxGlobalCacheSize);
         Page page = pageManager.getPage();
-        assert(page == null);
+        assert (page == null);
     }
 
     /**
@@ -49,9 +47,9 @@ public class PageManagerTest {
         final long maxGlobalCacheSize = 16 * 1024 * 1024;
         PageManager pageManager = PageManager.getInstance(maxGlobalCacheSize);
         Page page = pageManager.getPage();
-        assert(page != null);
+        assert (page != null);
         page = pageManager.getPage();
-        assert(page == null);
+        assert (page == null);
     }
 
     /**
