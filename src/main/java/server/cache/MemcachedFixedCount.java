@@ -10,6 +10,7 @@ import java.util.Map;
  * Implementation of Cache with fixed count and LRU access order.
  * In this instance, cache will have a cap on number of items but not on the
  * storage used. Therefore, it can have a open bound on storage requirement.
+ * TODO: make it multi-threaded.
  */
 public final class MemcachedFixedCount implements Cache {
     private Map<String, CacheValue> cache;
@@ -37,15 +38,15 @@ public final class MemcachedFixedCount implements Cache {
 
     @Override
     public CacheValue get(String key) {
-        assert(key != null);
+        assert (key != null);
 
         return cache.get(key);
     }
 
     @Override
     public boolean set(String key, CacheValue value) {
-        assert(key != null);
-        assert(value != null);
+        assert (key != null);
+        assert (value != null);
 
         cache.put(key, value);
 

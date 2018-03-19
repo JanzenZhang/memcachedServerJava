@@ -31,6 +31,9 @@ import com.google.common.util.concurrent.MoreExecutors;
  * Each Slab maintains its own LRU.
  * To limit internal fragmentation, consider revisiting the number of slabs
  * created and difference between slot sizes of consecutive slabs.
+ * TODO: Use a bloom-filter to filter out guaranteed uncached elements.
+ * TODO: Use a smaller central cache to directly lookup a given key instead of
+ * broadcasting to all slabcaches.
  */
 public final class MemcachedFixedSizeSlabLRUPages implements Cache {
     private static final Logger LOGGER = Logger.getLogger(

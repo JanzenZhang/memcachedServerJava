@@ -34,6 +34,8 @@ import com.google.common.util.concurrent.MoreExecutors;
  * 
  * In order to help maintain an efficient slab-relocator, slab sizes are chosen
  * in powers of 2.
+ * 
+ * TODO: make it multi-threaded.
  */
 public final class MemcachedFixedSizeSlabLRU implements Cache {
     private TreeMap<Integer, MemcachedFixedSizeStrictLRU> cacheMapSlabs;
@@ -42,7 +44,7 @@ public final class MemcachedFixedSizeSlabLRU implements Cache {
     /** HARD LIMIT on cache size in number of bytes */
     private final long maxGlobalCacheSize;
 
-    private final int maxSlabs = 10;
+    private static final int MAX_SLABS = 10;
 
     ListeningExecutorService service;
 
@@ -70,16 +72,16 @@ public final class MemcachedFixedSizeSlabLRU implements Cache {
         // factor of 4. Fill from sizes of 16B to 4 MiB. We will have in total
         // 10 such slabs, with equal sizes. So ensure that maxCacheSize is a
         // multiple of 10.
-        assert(maxGlobalCacheSize % maxSlabs == 0);
-        final long slabSize = maxGlobalCacheSize / maxSlabs;
-        for (int i=4; i<=22; i+=2) {
+        assert (maxGlobalCacheSize % MAX_SLABS == 0);
+        final long slabSize = maxGlobalCacheSize / MAX_SLABS;
+        for (int i = 4; i <= 22; i += 2) {
             int key = (int) Math.pow(2, i);
             MemcachedFixedSizeStrictLRU slab =
                     new MemcachedFixedSizeStrictLRU(slabSize);
             cacheMapSlabs.put(key, slab);
         }
         this.highestCacheMapKey = (int) Math.pow(2, 22);
-        assert(cacheMapSlabs.size() == maxSlabs);
+        assert (cacheMapSlabs.size() == MAX_SLABS);
     }
 
     private MemcachedFixedSizeStrictLRU getCacheSlab(final int size) {
@@ -99,7 +101,7 @@ public final class MemcachedFixedSizeSlabLRU implements Cache {
     }
 
     @Override
-    public CacheValue get(String key) throws InterruptedException {
+    public CacheValue get(final String key) throws InterruptedException {
         assert (key != null);
 
         // First find the cache Slab that could hold this key. Since we don't
@@ -113,7 +115,8 @@ public final class MemcachedFixedSizeSlabLRU implements Cache {
         // Ask all SlabCaches if they have this key.
         try {
             int taskCount = cacheMapSlabs.size();
-            for (MemcachedFixedSizeStrictLRU slabCache : cacheMapSlabs.values()) {
+            for (MemcachedFixedSizeStrictLRU slabCache :
+                    cacheMapSlabs.values()) {
                 Future<CacheValue> task = completionService.submit(
                         new Callable<CacheValue>() {
                             public CacheValue call() {
@@ -150,7 +153,7 @@ public final class MemcachedFixedSizeSlabLRU implements Cache {
     }
 
     @Override
-    public boolean set(String key, CacheValue value) {
+    public boolean set(final String key, final CacheValue value) {
         assert (key != null);
         assert (value != null);
 
