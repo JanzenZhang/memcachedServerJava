@@ -11,7 +11,7 @@ import java.util.Map;
  * In this instance, cache will have a cap on number of items but not on the
  * storage used. Therefore, it can have a open bound on storage requirement.
  */
-public class MemcachedFixedCount implements Cache {
+public final class MemcachedFixedCount implements Cache {
     private Map<String, CacheValue> cache;
 
     /** HARD LIMIT on cache size in number of entries */

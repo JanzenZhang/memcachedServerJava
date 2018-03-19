@@ -17,23 +17,23 @@ import server.cache.CacheValue;
  * Upon fetching the necessary item from client socket, write it out to cache.
  */
 public class CommandSet extends AbstractCommand {
-    private final static Logger LOGGER = Logger.getLogger(
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     public CommandSet(final CacheManager cacheManager,
-            SocketChannel socketChannel) {
+            final SocketChannel socketChannel) {
         super(cacheManager, socketChannel);
     }
 
-    public void process(CommandSetRequest request, byte[] data)
-            throws IOException, InterruptedException {
+    public final void process(final CommandSetRequest request,
+            final byte[] data) throws IOException, InterruptedException {
         CacheValue value = new CacheValue(request.flags, request.bytes, data);
-        
+
         // Store the key in whatever format, it doesn;t matter. But make sure
         // to use the same format consistently in the server.
-        String key = new String(request.key, AbstractCommand.charset);
+        String key = new String(request.key, AbstractCommand.CHARSET);
 
-        boolean cached = cache.set(key, value);
+        boolean cached = getCache().set(key, value);
         if (cached) {
             respondToClient(CommandSetResponse.STORED);
         } else {
@@ -42,7 +42,7 @@ public class CommandSet extends AbstractCommand {
         LOGGER.info("Responded to client for key: " + request.key);
     }
 
-    private void respondToClient(CommandSetResponse response)
+    private void respondToClient(final CommandSetResponse response)
             throws IOException {
         LOGGER.info("responding to client...");
 
@@ -52,7 +52,7 @@ public class CommandSet extends AbstractCommand {
         } else {
             charBuf = CharBuffer.wrap("NOTSTORED" + "\r\n");
         }
-        ByteBuffer byteBuf = charset.encode(charBuf);
+        ByteBuffer byteBuf = CHARSET.encode(charBuf);
         writeToSocket(byteBuf);
         byteBuf = null;
     }

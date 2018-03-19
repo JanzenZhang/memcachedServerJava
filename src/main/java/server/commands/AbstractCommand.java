@@ -13,12 +13,12 @@ import server.CacheManager;
 import server.cache.Cache;
 
 public abstract class AbstractCommand {
-    private final static Logger LOGGER = Logger.getLogger(
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
-    protected Cache cache;
-    protected SocketChannel socketChannel;
-    static final Charset charset = Charset.forName("UTF-8");
+    private Cache cache;
+    private SocketChannel socketChannel;
+    static final Charset CHARSET = Charset.forName("UTF-8");
 
     AbstractCommand(final CacheManager cacheManager,
             final SocketChannel socketChannel) {
@@ -26,11 +26,15 @@ public abstract class AbstractCommand {
         this.socketChannel = socketChannel;
     }
 
-    protected void writeToSocket(ByteBuffer data) throws IOException {
-//        data.compact();
-//        data.flip();
+    protected final Cache getCache() {
+        return cache;
+    }
+
+    protected final void writeToSocket(final ByteBuffer data)
+            throws IOException {
         // Ensure we always have the buffer all set to be read.
-        assert(data.position() == 0);
+        assert (data.position() == 0);
+
         while (data.hasRemaining()) {
             int n = socketChannel.write(data);
             LOGGER.info("Wrote bytes: " + n);

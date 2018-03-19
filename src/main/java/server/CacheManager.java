@@ -14,8 +14,8 @@ import server.cache.MemcachedFixedSizeStrictLRU;
 /**
  * Cache manager to manage specific implementation of cache. Its a singleton.
  */
-public class CacheManager {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class CacheManager {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private static CacheManager instance;
@@ -25,20 +25,19 @@ public class CacheManager {
     private final MemcachedFixedSizeSlabLRU fixedSizeSlabLRUCache;
     private final MemcachedFixedSizeSlabLRUPages fixedSizeSlabLRUPagesCache;
 
-    private static final long Ki = 1024L;
-    private static final long Mi = 1024L * Ki;
-    //	private static final long Gi = 1024L * Mi;
+    private static final long K = 1024L;
+    private static final long M = 1024L * K;
 
-    /** maximum number of cache entries */
-    private static final long maxCacheSize = 160 * Mi;
+    /** maximum number of cache entries. */
+    private static final long MAX_CACHE_SIZE = 160 * M;
 
     private CacheManager() {
-        fixedCountCache = new MemcachedFixedCount(maxCacheSize);
+        fixedCountCache = new MemcachedFixedCount(MAX_CACHE_SIZE);
         fixedSizeStrictLRUCache = new MemcachedFixedSizeStrictLRU(
-                maxCacheSize);
-        fixedSizeSlabLRUCache = new MemcachedFixedSizeSlabLRU(maxCacheSize);
+                MAX_CACHE_SIZE);
+        fixedSizeSlabLRUCache = new MemcachedFixedSizeSlabLRU(MAX_CACHE_SIZE);
         fixedSizeSlabLRUPagesCache =
-                MemcachedFixedSizeSlabLRUPages.getInstance(maxCacheSize);
+                MemcachedFixedSizeSlabLRUPages.getInstance(MAX_CACHE_SIZE);
         LOGGER.finer("CacheManager singleton instance created");
     }
 

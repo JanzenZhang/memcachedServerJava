@@ -20,8 +20,8 @@ import com.google.common.annotations.VisibleForTesting;
  * memory. Beyond that it maintains its own LRU list and recycles within its
  * pages.
  */
-public class SlabCache implements Cache {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class SlabCache implements Cache {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private final Slab slab;
@@ -39,20 +39,21 @@ public class SlabCache implements Cache {
         this.slabCacheMap = new ConcurrentHashMap<>();
         this.lruKeyList = new LinkedList<>();
         this.lruKeyListSemaphore = new Semaphore(1);
+
         LOGGER.info("Slabcache instance created: " + slotSize);
     }
 
     @Override
-    public CacheValue get(String key) throws InterruptedException {
-        LOGGER.info("slabcache: " + getSlotSize() + " size: " +
-                slabCacheMap.size());
+    public CacheValue get(final String key) throws InterruptedException {
+        LOGGER.info("slabcache: " + getSlotSize() + " size: "
+                + slabCacheMap.size());
 
         CacheSlot cacheSlot;
         synchronized (slabCacheMap) {
             cacheSlot = slabCacheMap.get(key);
             if (cacheSlot == null) {
-                LOGGER.info("key: " + key + " not found in slabcache: " +
-                        getSlotSize());
+                LOGGER.info("key: " + key + " not found in slabcache: "
+                        + getSlotSize());
                 return null;
             }
             cacheSlot.lock();
@@ -62,13 +63,13 @@ public class SlabCache implements Cache {
 
         // Reinsert the key at head.
         boolean isRemove = lruKeyList.remove(key);
-        assert(isRemove == true);
+        assert (isRemove);
         lruKeyList.add(key);
 
         lruKeyListSemaphore.release();
 
         final Slab slab1 = cacheSlot.getSlab();
-        assert(slab1 == this.slab);
+        assert (slab1 == this.slab);
         final Page page = cacheSlot.getPage();
         final int offset = cacheSlot.getOffset();
 
@@ -77,8 +78,8 @@ public class SlabCache implements Cache {
         buf.limit(offset + slab.getSlotSize());
         try {
             CacheValue cacheValue = CacheValue.deserialize(buf);
-            LOGGER.info("key: " + key + " found in slabcache: " +
-                    getSlotSize());
+            LOGGER.info("key: " + key + " found in slabcache: "
+                    + getSlotSize());
             return cacheValue;
         } catch (BufferUnderflowException e) {
             LOGGER.severe(e.getMessage());
@@ -89,7 +90,7 @@ public class SlabCache implements Cache {
     }
 
     @Override
-    public boolean set(String key, CacheValue value)
+    public boolean set(final String key, final CacheValue value)
             throws InterruptedException {
         assert (key != null);
         assert (value != null);
@@ -111,8 +112,8 @@ public class SlabCache implements Cache {
                         // This can happen when other slabs have taken up all
                         // the required memory before even the first request is
                         // made on this slab.
-                        LOGGER.info("SlabCache set failing to cache" +
-                                " because of lack of memory. Key: " + key);
+                        LOGGER.info("SlabCache set failing to cache"
+                                + " because of lack of memory. Key: " + key);
                         lruKeyListSemaphore.release();
                         return false;
                     }
@@ -122,16 +123,16 @@ public class SlabCache implements Cache {
                     lruKeyListSemaphore.release();
                 }
             }
-            assert(cacheSlot != null);
+            assert (cacheSlot != null);
             cacheSlot.lock();
         }
 
         // Use the cacheSlot to store new value.
         final Slab slab1 = cacheSlot.getSlab();
-        assert(slab1 == this.slab);
+        assert (slab1 == this.slab);
         final Page page = cacheSlot.getPage();
         final int offset = cacheSlot.getOffset();
-        assert(offset + slab.getSlotSize() <= page.getPageSize());
+        assert (offset + slab.getSlotSize() <= page.getPageSize());
 
         ByteBuffer buf = ByteBuffer.wrap(page.getData());
         buf.position(offset);
@@ -155,7 +156,8 @@ public class SlabCache implements Cache {
 
     @VisibleForTesting
     int getCacheSize() {
-        assert(slabCacheMap.size() == lruKeyList.size());
+        assert (slabCacheMap.size() == lruKeyList.size());
+
         return slabCacheMap.size();
     }
 

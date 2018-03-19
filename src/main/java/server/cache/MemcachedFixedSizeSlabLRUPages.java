@@ -29,12 +29,11 @@ import com.google.common.util.concurrent.MoreExecutors;
  * Pages are maintained by a central memory manager(PageManager) and once pages
  * are allocated to slabs, they are not reclaimed.
  * Each Slab maintains its own LRU.
- * 
  * To limit internal fragmentation, consider revisiting the number of slabs
  * created and difference between slot sizes of consecutive slabs.
  */
-public class MemcachedFixedSizeSlabLRUPages implements Cache {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class MemcachedFixedSizeSlabLRUPages implements Cache {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private static MemcachedFixedSizeSlabLRUPages instance;
@@ -51,11 +50,11 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
      */
     private final TreeMap<Integer, SlabCache> slabTree;
 
-    private static final int maxSlabs = 10;
+    private static final int MAX_SLABS = 10;
 
     private final PageManager pageManager;
 
-    ListeningExecutorService service;
+    private ListeningExecutorService service;
 
     /**
      * Number of threads available to run get requests on all Slabs.
@@ -63,7 +62,7 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
      * and ConnectionManager as we have a mixture of IO heavy and CPU heavy
      * activity between these components.
      */
-    private static final int threadPoolSize =
+    private static final int THREAD_POOL_SIZE =
             Runtime.getRuntime().availableProcessors();
 
     public static MemcachedFixedSizeSlabLRUPages getInstance(
@@ -71,8 +70,8 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
         if (instance == null) {
             instance = new MemcachedFixedSizeSlabLRUPages(maxCacheSize);
         }
-        assert(instance.maxGlobalCacheSize == maxCacheSize);
-        LOGGER.info("MemcachedFixedSizeSlabLRUPages singleton instance created");
+        assert (instance.maxGlobalCacheSize == maxCacheSize);
+        LOGGER.finest("singleton instance created");
 
         return instance;
     }
@@ -84,8 +83,8 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
         this.pageManager = PageManager.getInstance(maxGlobalCacheSize);
         initializeSlabs();
         service = MoreExecutors.listeningDecorator(
-                Executors.newFixedThreadPool(threadPoolSize));
-        LOGGER.info("Singleton instance created");
+                Executors.newFixedThreadPool(THREAD_POOL_SIZE));
+        LOGGER.finest("Singleton instance created");
     }
 
     /** Insert fixed number of entries into slabTree.
@@ -95,12 +94,12 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
      *  based on demand (workload dependent).
      */
     private void initializeSlabs() {
-        for (int i=4; i<=22; i+=2) {
+        for (int i = 4; i <= 22; i += 2) {
             int slotSize = (int) Math.pow(2, i);
             SlabCache slabCache = new SlabCache(slotSize, pageManager);
             slabTree.put(slotSize, slabCache);
         }
-        assert(slabTree.size() == maxSlabs);
+        assert (slabTree.size() == MAX_SLABS);
     }
 
     private SlabCache getSlabCache(final int size) {
@@ -112,16 +111,16 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
              * a lot of sophistication to maintain an internal map for all such
              * mappings and the ability to either pin some cache elements.
              */
-            LOGGER.severe("Slab for keySize: " + size +
-                    " doesn't exist." + " Maximum slab size: " +
-                    slabTree.lastKey());
+            LOGGER.severe("Slab for keySize: " + size
+                    + " doesn't exist." + " Maximum slab size: "
+                    + slabTree.lastKey());
             return null;
         }
         return slabTree.get(key);
     }
 
     @Override
-    public CacheValue get(String key) throws InterruptedException {
+    public CacheValue get(final String key) throws InterruptedException {
         assert (key != null);
 
         CacheValue retValue = null;
@@ -147,9 +146,9 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
                 futureList.add(task);
             }
 
-            /* Only one of the futures will have the required cacheValue if any.
-             * As soon as one returns, cancel other futures and return the cached
-             * value.
+            /* Only one of the futures will have the required cacheValue if
+             * any. As soon as one returns, cancel other futures and return
+             * the cached value.
              */
             for (int i = 0; i < taskCount; ++i) {
                 try {
@@ -169,32 +168,32 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
             }
         }
 
-        LOGGER.info("get for key: " + key + " returned: " +
-                (retValue != null));
+        LOGGER.finer("get for key: " + key + " returned: "
+                + (retValue != null));
         return retValue;
     }
 
     @Override
-    public boolean set(String key, CacheValue value)
+    public boolean set(final String key, final CacheValue value)
             throws InterruptedException {
         assert (key != null);
         assert (value != null);
 
-        LOGGER.info("serializedSize: " + value.getSerializedSize());
+        LOGGER.finer("serializedSize: " + value.getSerializedSize());
         // First find the cache Slab that could hold this key.
         SlabCache slabCache = getSlabCache(value.getSerializedSize());
         if (slabCache != null) {
-            if (slabCache.set(key, value) ) {
-                LOGGER.info("Cached for key: " + key + " in slab: " +
-                    slabCache.getSlotSize());
+            if (slabCache.set(key, value)) {
+                LOGGER.finer("Cached for key: " + key + " in slab: "
+                    + slabCache.getSlotSize());
                 return true;
             } else {
-                LOGGER.info("Cannot cache for key: " + key + " in slab: " +
-                        slabCache.getSlotSize());
+                LOGGER.finer("Cannot cache for key: " + key + " in slab: "
+                        + slabCache.getSlotSize());
                 return false;
             }
         } else {
-            LOGGER.info("Cannot cache key: " + key);
+            LOGGER.finer("Cannot cache key: " + key);
             return false;
         }
     }
@@ -206,6 +205,6 @@ public class MemcachedFixedSizeSlabLRUPages implements Cache {
 
     @VisibleForTesting
     static int getMaxSlabs() {
-        return maxSlabs;
+        return MAX_SLABS;
     }
 }

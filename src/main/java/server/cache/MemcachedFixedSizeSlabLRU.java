@@ -35,7 +35,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  * In order to help maintain an efficient slab-relocator, slab sizes are chosen
  * in powers of 2.
  */
-public class MemcachedFixedSizeSlabLRU implements Cache {
+public final class MemcachedFixedSizeSlabLRU implements Cache {
     private TreeMap<Integer, MemcachedFixedSizeStrictLRU> cacheMapSlabs;
     private int highestCacheMapKey;
 

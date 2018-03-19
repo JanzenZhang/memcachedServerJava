@@ -7,19 +7,20 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Objects;
 
-/** cache value as stored in cache */
-public class CacheValue {
+/** cache value as stored in cache. */
+public final class CacheValue {
     private final short flags;
 
     private final int bytes;
 
-    /** data can be empty (null) */
+    /** data can be empty (null). */
     private final byte[] data;
 
-    public CacheValue(short flags, int bytes, byte[] data) {
-        assert((bytes == 0) || (data != null));
-        assert((bytes == 0) || (bytes == data.length));
+    public CacheValue(final short flags, final int bytes, final byte[] data) {
+        assert ((bytes == 0) || (data != null));
+        assert ((bytes == 0) || (bytes == data.length));
 
         this.flags = flags;
         this.bytes = bytes;
@@ -27,7 +28,7 @@ public class CacheValue {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (obj == null) {
             return false;
         }
@@ -43,6 +44,11 @@ public class CacheValue {
         CacheValue compObj = (CacheValue) obj;
         return ((compObj.flags == this.flags) && (compObj.bytes == this.bytes)
                 && Arrays.equals(compObj.data, this.data));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(flags, bytes, data);
     }
 
     public int getSerializedSize() {
@@ -68,7 +74,7 @@ public class CacheValue {
      * @param memDump byte array wrapped into ByteBuffer.
      * @return CacheValue object if deserialized; null otherwise.
      */
-    public static CacheValue deserialize(ByteBuffer buf)
+    public static CacheValue deserialize(final ByteBuffer buf)
             throws BufferUnderflowException {
         short flags = buf.getShort();
         int bytes = buf.getInt();
@@ -87,8 +93,8 @@ public class CacheValue {
      * @param buf byte array memory dump of the cacheValue object wrapped into
      *              ByteBuffer.
      */
-    public static void serialize(CacheValue cacheValue, ByteBuffer buf)
-            throws BufferOverflowException  {
+    public static void serialize(final CacheValue cacheValue,
+            final ByteBuffer buf) throws BufferOverflowException  {
         buf.putShort(cacheValue.flags)
             .putInt(cacheValue.bytes);
         if (cacheValue.bytes != 0) {

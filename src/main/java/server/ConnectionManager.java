@@ -39,8 +39,8 @@ import server.commands.CommandProcessor;
  *  and reported to client as CLIENT error or server error as per the protocol
  *  mandate.
  */
-public class ConnectionManager extends AbstractIdleService {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class ConnectionManager extends AbstractIdleService {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private static ConnectionManager instance;
@@ -48,7 +48,7 @@ public class ConnectionManager extends AbstractIdleService {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private CacheManager cacheManager;
-    
+
     private ServerSocketChannel serverSocket;
 
     private Selector selector;
@@ -57,32 +57,32 @@ public class ConnectionManager extends AbstractIdleService {
 
     private final int maximumWorkerPoolSize;
 
-    private static final long keepAliveTime = 10; // 10 mins
+    private static final long KEEP_ALIVE_TIME = 10; // 10 mins
 
     private final ThreadPoolExecutor workerThreads;
 
-    private static final int maxConcurrentRequests = 1024;
+    private static final int MAX_CONCURRENT_REQUESTS = 1024;
 
     private final BlockingQueue<Runnable> workerTasksQueue;
 
-    private static final String serverAddress = "0.0.0.0";
+    private static final String SERVER_ADDRESS = "0.0.0.0";
 
-    private static final int serverPort = 11211;
+    private static final int SERVER_PORT = 11211;
 
-    private static final int selectorTimeoutms = 2;
+    private static final int SELECTOR_TIMEOUT_MS = 2;
 
-    private ConnectionManager(final CacheManager cacheManager)
+    private ConnectionManager(final CacheManager cacheMgr)
             throws IOException {
-        this.cacheManager = cacheManager;
+        this.cacheManager = cacheMgr;
 
         selector = Selector.open();
         workerTasksQueue = new ArrayBlockingQueue<>(
-                maxConcurrentRequests);
+                MAX_CONCURRENT_REQUESTS);
         maximumWorkerPoolSize = Runtime.getRuntime().availableProcessors();
         LOGGER.finest("maximumWorkerPoolSize: " + maximumWorkerPoolSize);
-        coreWorkerPoolSize = Math.max(1, maximumWorkerPoolSize/2);
+        coreWorkerPoolSize = Math.max(1, maximumWorkerPoolSize / 2);
         workerThreads = new ThreadPoolExecutor(coreWorkerPoolSize,
-                maximumWorkerPoolSize, keepAliveTime, TimeUnit.MINUTES,
+                maximumWorkerPoolSize, KEEP_ALIVE_TIME, TimeUnit.MINUTES,
                 workerTasksQueue);
 
         configureServerSocket();
@@ -94,16 +94,16 @@ public class ConnectionManager extends AbstractIdleService {
         if (instance == null) {
             instance = new ConnectionManager(cacheManager);
         }
-        assert(instance.cacheManager == cacheManager);
+        assert (instance.cacheManager == cacheManager);
         return instance;
     }
 
     public static String getServerAddress() {
-        return serverAddress;
+        return SERVER_ADDRESS;
     }
 
     public static int getServerPort() {
-        return serverPort;
+        return SERVER_PORT;
     }
 
     private void configureServerSocket() throws IOException {
@@ -111,7 +111,7 @@ public class ConnectionManager extends AbstractIdleService {
         // If the server shutdown and restarts immediately, then tell the
         // kernel to reuse this address even though its state is in TIME_WAIT.
         serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-        serverSocket.bind(new InetSocketAddress(serverAddress, serverPort));
+        serverSocket.bind(new InetSocketAddress(SERVER_ADDRESS, SERVER_PORT));
         serverSocket.configureBlocking(false);
         serverSocket.register(selector, SelectionKey.OP_ACCEPT);
     }
@@ -121,7 +121,7 @@ public class ConnectionManager extends AbstractIdleService {
         while (true) {
             try {
                 // Blocking call
-                int ready = selector.select(selectorTimeoutms);
+                int ready = selector.select(SELECTOR_TIMEOUT_MS);
                 if (ready != 0) {
                     Set<SelectionKey> keys = selector.selectedKeys();
                     Iterator<SelectionKey> keyIterator = keys.iterator();
@@ -132,29 +132,30 @@ public class ConnectionManager extends AbstractIdleService {
                                     (ServerSocketChannel) key.channel();
                             SocketChannel client =
                                     serverSocketChannel.accept();
-                            assert(client != null);
-                            LOGGER.info("Accepted client request: " +
-                                    client.socket().getLocalAddress() + " : " +
-                                    client.socket().getLocalPort());
+                            assert (client != null);
+                            LOGGER.info("Accepted client request: "
+                                    + client.socket().getLocalAddress() + " : "
+                                    + client.socket().getLocalPort());
                             client.configureBlocking(false);
                             client.register(selector, SelectionKey.OP_READ);
                         } else if (key.isReadable()) {
-                            LOGGER.info("Thread: " + Thread.currentThread().getId() +
-                                    " : client request for READ: ");
+                            LOGGER.info("Thread: "
+                                    + Thread.currentThread().getId()
+                                    + " : client request for READ: ");
                             // Until data on this channel is consumed, do not
-                            // fire any more read events. 
+                            // fire any more read events.
                             key.interestOps(0);
                             SocketChannel socketChannel =
                                     (SocketChannel) key.channel();
                             workerThreads.execute(new CommandProcessor(
                                     cacheManager, socketChannel, key));
                         } else if (key.isWritable()) {
-                            LOGGER.severe("client request for WRITE" +
-                                    " not yet supported.");
+                            LOGGER.severe("client request for WRITE"
+                                    + " not yet supported.");
                             assert (false);
                         } else {
-                            LOGGER.severe("client request for invalid type: " +
-                                    key.readyOps());
+                            LOGGER.severe("client request for invalid type: "
+                                    + key.readyOps());
                             assert (false);
                         }
                         keyIterator.remove();
@@ -192,7 +193,7 @@ public class ConnectionManager extends AbstractIdleService {
         }
 
         Iterator<SelectionKey> keys = this.selector.keys().iterator();
-        while(keys.hasNext()) {
+        while (keys.hasNext()) {
             SelectionKey key = keys.next();
             SelectableChannel channel = key.channel();
             if (channel instanceof SocketChannel) {
@@ -209,15 +210,15 @@ public class ConnectionManager extends AbstractIdleService {
         selector.close();
 
         workerThreads.shutdown();
-        if (! workerThreads.awaitTermination(1, TimeUnit.MINUTES)) {
-            LOGGER.warning("WorkerThreads cannot be shut down within" +
-                    " timeout: 1 min");
+        if (!workerThreads.awaitTermination(1, TimeUnit.MINUTES)) {
+            LOGGER.warning("WorkerThreads cannot be shut down within"
+                    + " timeout: 1 min");
         }
 
         executor.shutdown();
         if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
-            LOGGER.warning("Executor cannot be shut down within" +
-                    " timeout: 1 min");
+            LOGGER.warning("Executor cannot be shut down within"
+                    + " timeout: 1 min");
         }
         LOGGER.info("Connection Manager shut down");
     }

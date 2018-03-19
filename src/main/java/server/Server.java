@@ -13,8 +13,8 @@ import com.google.common.util.concurrent.Service;
  * Kicks starts all the necessary services on startup and
  * ensures graceful shutdown upon termination.
  */
-public class Server {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class Server {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private static Server instance;

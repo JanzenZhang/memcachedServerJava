@@ -15,14 +15,14 @@ import com.google.common.base.Preconditions;
  * Once pages are assigned to a slab, they are not returned to this pool.
  * TODO : Manage page reclamation logic.
  */
-public class PageManager {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class PageManager {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private final long maxGlobalCacheSize;
 
     /** 16 MiB */
-    private static final int pageSize = 16 * 1024 * 1024;
+    private static final int PAGE_SIZE = 16 * 1024 * 1024;
 
     private final int pagePoolCount;
 
@@ -32,23 +32,23 @@ public class PageManager {
 
     private PageManager(final long maxGlobalCacheSize) {
         this.maxGlobalCacheSize = maxGlobalCacheSize;
-        this.pagePoolCount = (int) (maxGlobalCacheSize / pageSize);
-        assert(pagePoolCount > 0);
+        this.pagePoolCount = (int) (maxGlobalCacheSize / PAGE_SIZE);
+        assert (pagePoolCount > 0);
         this.pagePool = new LinkedList<>();
 
         for (int p = 0; p < pagePoolCount; p++) {
-            Page page = new Page(pageSize);
+            Page page = new Page(PAGE_SIZE);
             pagePool.add(page);
         }
     }
 
     public static PageManager getInstance(final long maxGlobalCacheSize) {
-        Preconditions.checkArgument(maxGlobalCacheSize > pageSize);
+        Preconditions.checkArgument(maxGlobalCacheSize > PAGE_SIZE);
 
         if (instance == null) {
             instance = new PageManager(maxGlobalCacheSize);
         }
-        assert(instance.maxGlobalCacheSize == maxGlobalCacheSize);
+        assert (instance.maxGlobalCacheSize == maxGlobalCacheSize);
         LOGGER.info("PageManager singleton instance created");
 
         return instance;
@@ -64,6 +64,6 @@ public class PageManager {
     }
 
     public static int getPageSize() {
-        return pageSize;
+        return PAGE_SIZE;
     }
 }

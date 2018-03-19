@@ -11,16 +11,15 @@ import java.util.logging.Logger;
  * Accesses to CacheSlot must be synchronized using lock and unlock functions
  * in this class.
  * Before locking a cache slot, take lock on slabcache's map.
- *
  */
-public class CacheSlot {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class CacheSlot {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
-    /** The slab that owns this cacheSlot */
+    /** The slab that owns this cacheSlot. */
     private final Slab slab;
 
-    /** The page that contains this cacheSlot */
+    /** The page that contains this cacheSlot. */
     private final Page page;
 
     /** Offset of data in its page. */
@@ -38,18 +37,26 @@ public class CacheSlot {
         this.sem = new Semaphore(1);
     }
 
+    /**
+     * Get the slab.
+     * @return return the slab for this slot.
+     */
     public Slab getSlab() {
-        assert(isLocked());
+        assert (isLocked());
         return slab;
     }
 
+    /**
+     *  Get the page.
+     * @return page
+     */
     public Page getPage() {
-        assert(isLocked());
+        assert (isLocked());
         return page;
     }
 
     public int getOffset() {
-        assert(isLocked());
+        assert (isLocked());
         return offset;
     }
 
@@ -65,7 +72,7 @@ public class CacheSlot {
     }
 
     public void unlock() {
-        assert(isLocked());
+        assert (isLocked());
         LOGGER.finest("CacheSlot unlocked: " + this);
         sem.release();
     }

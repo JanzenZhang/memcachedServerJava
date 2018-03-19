@@ -4,7 +4,6 @@
 package server.cache;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.logging.Logger;
 
@@ -13,11 +12,10 @@ import java.util.logging.Logger;
  * and once acquired, they aren't released back to generic pool.
  * Each slab is configured of a unique size(power of 2) and all cacheSlots
  * within this slab are of this same slot size.
- * 
  * SlabCache extends each slab into its own mini cache.
  */
-public class Slab {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class Slab {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     /**
@@ -32,11 +30,8 @@ public class Slab {
 
     private boolean isGlobalPoolEmpty;
 
-    /** All pages in this slab hold fixed sized slots of slabSize bytes. */
-    List<Page> pages;
-
     /** List of free cacheSlots */
-    Queue<CacheSlot> freeCacheSlotList;
+    private Queue<CacheSlot> freeCacheSlotList;
 
     Slab(final int slotSize, final PageManager pageManager) {
         this.slotSize = slotSize;
@@ -44,14 +39,13 @@ public class Slab {
 
         this.freeCacheSlotList = new LinkedList<>();
         this.isGlobalPoolEmpty = false;
-        this.pages = new LinkedList<>();
-        assert(PageManager.getPageSize() % this.slotSize == 0);
+        assert (PageManager.getPageSize() % this.slotSize == 0);
         this.slotsPerPage = (int) (PageManager.getPageSize() / this.slotSize);
     }
-    
-    private void addToFreeSlotOffsetList(Page newPage) {
-        for (int i=0; i< slotsPerPage; i++) {
-            freeCacheSlotList.add(new CacheSlot(this, newPage, i*slotSize));
+
+    private void addToFreeSlotOffsetList(final Page newPage) {
+        for (int i = 0; i < slotsPerPage; i++) {
+            freeCacheSlotList.add(new CacheSlot(this, newPage, i * slotSize));
         }
     }
 
@@ -66,8 +60,8 @@ public class Slab {
      *          available.
      */
     public synchronized CacheSlot getSlot() {
-        LOGGER.info("getSlot : " + slotSize + " freeSLots: " +
-                freeCacheSlotList.size());
+        LOGGER.info("getSlot : " + slotSize + " freeSLots: "
+                + freeCacheSlotList.size());
         if (freeCacheSlotList.isEmpty()) {
             if (!isGlobalPoolEmpty) {
                 Page newPage = pageManager.getPage();

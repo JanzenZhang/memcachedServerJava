@@ -3,12 +3,12 @@
  */
 package server.cache;
 
-public class Page {
+public final class Page {
     private final int pageSize;
 
     private byte[] data;
 
-    public Page(int pageSize) {
+    public Page(final int pageSize) {
         this.pageSize = pageSize;
         data = new byte[pageSize];
     }

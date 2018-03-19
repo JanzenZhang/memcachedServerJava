@@ -12,14 +12,15 @@ public final class CommandSetRequest {
     final short flags;
     final long expTime;
     final int bytes;
-    boolean noReply;
+    final boolean noReply;
 
-    public CommandSetRequest(byte[] key, short flags, long expTime, int bytes) {
+    public CommandSetRequest(final byte[] key, final short flags,
+            final long expTime, final int bytes) {
         this(key, flags, expTime, bytes, /*noReply*/ false);
     }
 
-    public CommandSetRequest(byte[] key, short flags, long expTime, int bytes,
-            boolean noReply) {
+    public CommandSetRequest(final byte[] key, final short flags,
+            final long expTime, final int bytes, final boolean noReply) {
         this.key = key;
         this.flags = flags;
         this.expTime = expTime;

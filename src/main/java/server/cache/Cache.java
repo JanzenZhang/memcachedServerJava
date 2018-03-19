@@ -3,13 +3,14 @@
  */
 package server.cache;
 
-/** Generic cache interface */
+/** Generic cache interface. */
 public interface Cache {
     /**
      * Fetch the cache value.
      *
      * @param key cache key
      * @return cache value if exists; null otherwise.
+     * @throws InterruptedException
      */
     CacheValue get(String key) throws InterruptedException;
 
@@ -19,6 +20,7 @@ public interface Cache {
      * @param key cache key
      * @param value cache value.
      * @return true if stored in cache; false otherwise.
+     * @throws InterruptedException
      */
     boolean set(String key, CacheValue value) throws InterruptedException;
 }

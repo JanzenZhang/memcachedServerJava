@@ -11,18 +11,18 @@ import java.util.logging.Logger;
 
 import server.CacheManager;
 
-public class CommandError extends AbstractCommand {
-    private final static Logger LOGGER = Logger.getLogger(
+public final class CommandError extends AbstractCommand {
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     public CommandError(final CacheManager cacheManager,
-            SocketChannel socketChannel) {
+            final SocketChannel socketChannel) {
         super(cacheManager, socketChannel);
     }
 
-    public void respondToClient(String status, String errorMsg)
+    public void respondToClient(final String status, final String errorMsg)
             throws IOException {
-        assert(status != null);
+        assert (status != null);
         //errorMsg can be null for status=ERROR
 
         LOGGER.info("responding error message to client...");
@@ -36,10 +36,10 @@ public class CommandError extends AbstractCommand {
             charBuf = CharBuffer.wrap(status + " " + errorMsg + "\r\n");
         } else {
             LOGGER.severe("Invalid status: " + status);
-            assert(false);
+            assert (false);
         }
 
-        ByteBuffer byteBuf = charset.encode(charBuf);
+        ByteBuffer byteBuf = CHARSET.encode(charBuf);
         writeToSocket(byteBuf);
         byteBuf = null;
     }

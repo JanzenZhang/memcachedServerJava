@@ -30,7 +30,7 @@ import com.google.common.util.concurrent.Service;
  * cache behavior.
  */
 public class ConnectionManagerTest {
-    private final static Logger LOGGER = Logger.getLogger(
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private CacheManager cacheManager;

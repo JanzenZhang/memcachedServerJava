@@ -20,7 +20,7 @@ import server.CacheManager;
  * that corresponding thread dies.
  */
 public class CommandProcessor implements Runnable {
-    private final static Logger LOGGER = Logger.getLogger(
+    private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 
     private CacheManager cacheManager;
@@ -38,14 +38,14 @@ public class CommandProcessor implements Runnable {
         // Ensure that this key doesn't fire any more events.
         // That prevents multiple threads from processing data from the same
         // channel.
-        assert(selectionKey.interestOps() == 0);
+        assert (selectionKey.interestOps() == 0);
     }
 
     private boolean validKey(final String key) {
         Pattern p = Pattern.compile("[^a-z0-9]", Pattern.CASE_INSENSITIVE);
         if (p.matcher(key).find()) {
-            LOGGER.info("Invalid Key: " + key +
-                    " contains control characters");
+            LOGGER.info("Invalid Key: " + key
+                    + " contains control characters");
             return false;
         } else if (key.contains(" ")) {
             // Should not be the case as our logic uses space as delimiter
@@ -53,8 +53,8 @@ public class CommandProcessor implements Runnable {
             LOGGER.info("Invalid Key: " + key + " contains spaces");
             return false;
         } else if (key.length() > 250) {
-            LOGGER.info("Invalid Key: " + key + " size: " + key.length() +
-                    " > 250");
+            LOGGER.info("Invalid Key: " + key + " size: " + key.length()
+                    + " > 250");
             return false;
         }
         return true;
@@ -62,13 +62,12 @@ public class CommandProcessor implements Runnable {
 
     /**
      * Read data bytes from channel.
-     * 
      * @param bytesToRead bytes to read on this channel. Blocks until these
      *          many bytes are read.
      */
     private byte[] readBytesFromChannel(final int bytesToRead)
             throws IOException {
-        assert(bytesToRead != 0);
+        assert (bytesToRead != 0);
 
         int bytesRead;
         int totalBytesRead = 0;
@@ -84,8 +83,8 @@ public class CommandProcessor implements Runnable {
                 Thread.yield();
                 continue;
             } else if (bytesRead == -1) {
-                LOGGER.info("Client abruptly closed the connection" +
-                        " while request was being processed!");
+                LOGGER.info("Client abruptly closed the connection"
+                        + " while request was being processed!");
                 socketChannel.close();
                 // Since the channel is closed, server will not bother
                 // processing this command any further even though it may have
@@ -111,13 +110,13 @@ public class CommandProcessor implements Runnable {
      * @param delimiterStr Delimiter string to identify end of required data.
      * @return data bytes read from input not containing the delimiters.
      */
-    private byte[] readBytesFromChannel(String delimiterStr)
+    private byte[] readBytesFromChannel(final String delimiterStr)
             throws IOException, InterruptedException {
-        assert(delimiterStr != null);
-        assert(! delimiterStr.isEmpty());
+        assert (delimiterStr != null);
+        assert (!delimiterStr.isEmpty());
 
         ByteBuffer resBuffer = ByteBuffer.allocate(512);
-        byte[] delimiters = delimiterStr.getBytes(AbstractCommand.charset);
+        byte[] delimiters = delimiterStr.getBytes(AbstractCommand.CHARSET);
         int curDelimIndex = 0;
         final int endDelimIndex = delimiters.length;
         ByteBuffer buf = ByteBuffer.allocate(1);
@@ -141,8 +140,8 @@ public class CommandProcessor implements Runnable {
                 // Input has partial delimiter and its disallowed by protocol.
                 LOGGER.info("Invalid client input. Has control characters");
                 processErrorCommand("CLIENT_ERROR",
-                        "Input cannot have control characters: " +
-                    new String(resBuffer.array()));
+                        "Input cannot have control characters: "
+                    + new String(resBuffer.array()));
             } else {
                 // Just the regular data.
                 resBuffer.put(b);
@@ -162,8 +161,9 @@ public class CommandProcessor implements Runnable {
             throws IOException, InterruptedException {
 
         byte[] keyBytes = readBytesFromChannel(/*delimiterStr=*/ "\r\n");
-        String keyStr = new String(keyBytes, AbstractCommand.charset);
-        LOGGER.info("processing get command: " + keyStr + " bytes: " + keyBytes);
+        String keyStr = new String(keyBytes, AbstractCommand.CHARSET);
+        LOGGER.info("processing get command: " + keyStr + " bytes: "
+                + keyBytes);
         CommandGet commandGet = new CommandGet(cacheManager,
                 socketChannel);
         CommandGetRequest request = new CommandGetRequest(keyBytes);
@@ -181,11 +181,11 @@ public class CommandProcessor implements Runnable {
             processErrorCommand("CLIENT_ERROR", "Invalid key for set command");
             return;
         }
-        String keyStr = new String(keyBytes, AbstractCommand.charset);
-        LOGGER.info("Thread: " + Thread.currentThread().getId() +
-                " received key on server: -" + keyStr + "-" + " keyBytes: " +
-                keyBytes);
-        if (! validKey(keyStr)) {
+        String keyStr = new String(keyBytes, AbstractCommand.CHARSET);
+        LOGGER.info("Thread: " + Thread.currentThread().getId()
+                + " received key on server: -" + keyStr + "-" + " keyBytes: "
+                + keyBytes);
+        if (!validKey(keyStr)) {
             processErrorCommand("CLIENT_ERROR",
                     "Invalid key for set command: " + keyStr);
             return;
@@ -197,10 +197,10 @@ public class CommandProcessor implements Runnable {
             processErrorCommand("CLIENT_ERROR", "Invalid set command");
             return;
         }
-        String remCommandStr = new String(resBytes, AbstractCommand.charset);
-        LOGGER.info("Thread: " + Thread.currentThread().getId() +
-                " received on server: size: " + remCommandStr.length() +
-                " Str:-" + remCommandStr + "-");
+        String remCommandStr = new String(resBytes, AbstractCommand.CHARSET);
+        LOGGER.info("Thread: " + Thread.currentThread().getId()
+                + " received on server: size: " + remCommandStr.length()
+                + " Str:-" + remCommandStr + "-");
 
         String[] subParts = remCommandStr.split(" ");
         if (subParts.length < 3 || subParts.length > 4) {
@@ -224,7 +224,7 @@ public class CommandProcessor implements Runnable {
             LOGGER.info("bytes: " + bytes);
 
             if (subParts.length == 4) {
-                // Ignore noreply flag for this assignment.
+                ; // Ignore noreply flag for this assignment.
             }
         } catch (NumberFormatException e) {
             LOGGER.info(e.getMessage());
@@ -268,25 +268,25 @@ public class CommandProcessor implements Runnable {
             return;
         }
         String commandTypeStr = new String(commandType,
-                AbstractCommand.charset);
+                AbstractCommand.CHARSET);
 
         if (commandTypeStr.equals("get ")) {
             procesGetCommand();
         } else if (commandTypeStr.equals("set ")) {
             processSetCommand();
         } else {
-            LOGGER.info("Only accepts get or set command :-" + commandTypeStr +
-                    "-" + " length: " + commandType.length);
+            LOGGER.info("Only accepts get or set command :-" + commandTypeStr
+                    + "-" + " length: " + commandType.length);
             processErrorCommand("ERROR", null);
         }
         return;
     }
 
     @Override
-    public void run() {
+    public final void run() {
         try {
-            LOGGER.info("Thread: " + Thread.currentThread().getId() +
-                    " running ...");
+            LOGGER.info("Thread: " + Thread.currentThread().getId()
+                    + " running ...");
             handleInputFromClient();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -305,16 +305,16 @@ public class CommandProcessor implements Runnable {
             try {
                 processErrorCommand("SERVER_ERROR", e.getMessage());
             } catch (IOException e1) {
-                LOGGER.severe("IOException processing error command: " +
-                        e1.getMessage());
+                LOGGER.severe("IOException processing error command: "
+                        + e1.getMessage());
             } catch (InterruptedException e1) {
                 Thread.currentThread().interrupt();
             } finally {
                 try {
                     socketChannel.close();
                 } catch (IOException e2) {
-                    LOGGER.severe("IOException trying to close socketChannel" +
-                            e2.getMessage());
+                    LOGGER.severe("IOException trying to close socketChannel"
+                            + e2.getMessage());
                 }
                 selectionKey.cancel();
             }

@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * the number of items. Therefore, it can have a open bound on cache metadata
  * like number of buckets.
  */
-public class MemcachedFixedSizeStrictLRU implements Cache {
+public final class MemcachedFixedSizeStrictLRU implements Cache {
     private ConcurrentHashMap<String, CacheValue> cache;
     // Stores references to keys in map, ordered by least recently used
     // accesses.
