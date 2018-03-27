@@ -20,10 +20,10 @@ public final class MemcachedFixedSizeStrictLRU implements Cache {
     // accesses.
     private Queue<String> lruKeyList;
 
-    /** HARD LIMIT on cache size in number of bytes */
+    /** HARD LIMIT on cache size in number of bytes. */
     private final long maxCacheSize;
 
-    /** Used cache size in number of bytes */
+    /** Used cache size in number of bytes. */
     private long currentCacheSize;
 
     public MemcachedFixedSizeStrictLRU(final long maxCacheSize) {
@@ -64,8 +64,8 @@ public final class MemcachedFixedSizeStrictLRU implements Cache {
         // Keep updating a local copy of size of garbage collected (gc) cache
         // elements. This helps in indirect locking of currentCacheSize.
         long gcCacheSize = 0;
-        while (currentCacheSize - gcCacheSize + value.getSerializedSize() >
-                maxCacheSize) {
+        while (currentCacheSize - gcCacheSize + value.getSerializedSize()
+                > maxCacheSize) {
             final String rKey;
             synchronized (lruKeyList) {
                 rKey = lruKeyList.remove();
@@ -80,13 +80,13 @@ public final class MemcachedFixedSizeStrictLRU implements Cache {
                 // remove previous reference to this key in LRU list and
                 // reinsert it to queue.
                 boolean isRemove = lruKeyList.remove(key);
-                assert (isRemove == true);
+                assert (isRemove);
             }
             lruKeyList.add(key);
         }
 
-        currentCacheSize = currentCacheSize - gcCacheSize +
-                value.getSerializedSize();
+        currentCacheSize = currentCacheSize - gcCacheSize
+                + value.getSerializedSize();
         synchronized (lruKeyList) {
             assert (lruKeyList.size() == cache.size());
         }

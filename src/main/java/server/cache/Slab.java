@@ -30,7 +30,7 @@ public final class Slab {
 
     private boolean isGlobalPoolEmpty;
 
-    /** List of free cacheSlots */
+    /** List of free cacheSlots. */
     private Queue<CacheSlot> freeCacheSlotList;
 
     Slab(final int slotSize, final PageManager pageManager) {

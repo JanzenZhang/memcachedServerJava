@@ -139,7 +139,8 @@ public final class SlabCache implements Cache {
         buf.limit(offset + slab.getSlotSize());
         try {
             CacheValue.serialize(value, buf);
-            LOGGER.finest("Key: " + key + " set in slabCache: " + getSlotSize());
+            LOGGER.finest("Key: " + key + " set in slabCache: "
+                    + getSlotSize());
             LOGGER.finest("Size of slabcache: " + slabCacheMap.size());
             return true;
         } catch (BufferOverflowException e) {

@@ -21,7 +21,7 @@ public final class PageManager {
 
     private final long maxGlobalCacheSize;
 
-    /** 16 MiB */
+    /** 16 MiB. */
     private static final int PAGE_SIZE = 16 * 1024 * 1024;
 
     private final int pagePoolCount;

@@ -32,7 +32,7 @@ public final class CacheManager {
     private static final long MAX_CACHE_SIZE = 160 * M;
 
     private CacheManager() {
-        fixedCountCache = new MemcachedFixedCount(MAX_CACHE_SIZE);
+        fixedCountCache = MemcachedFixedCount.getInstance(MAX_CACHE_SIZE);
         fixedSizeStrictLRUCache = new MemcachedFixedSizeStrictLRU(
                 MAX_CACHE_SIZE);
         fixedSizeSlabLRUCache = new MemcachedFixedSizeSlabLRU(MAX_CACHE_SIZE);
