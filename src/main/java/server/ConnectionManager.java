@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.StandardSocketOptions;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -164,6 +165,10 @@ public final class ConnectionManager extends AbstractIdleService {
                 } else {
                     Thread.yield();
                 }
+            } catch (AsynchronousCloseException e) {
+                LOGGER.finest("Multiple test threads working on same channel."
+                        + " Safe to stop here.");
+                break;
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClosedSelectorException e) {

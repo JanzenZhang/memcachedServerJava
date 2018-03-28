@@ -29,7 +29,7 @@ import com.google.common.util.concurrent.Service;
  * Tests for get and set calls for end-to-end state: socket calls handling to
  * cache behavior.
  */
-public class ConnectionManagerTest {
+public class ConnectionManagerTest extends AbstractTest {
     private static final Logger LOGGER = Logger.getLogger(
             Thread.currentThread().getStackTrace()[0].getClassName());
 

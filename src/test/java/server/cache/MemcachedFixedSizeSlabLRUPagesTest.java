@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import server.AbstractTest;
 import server.cache.CacheValue;
 import server.cache.MemcachedFixedSizeSlabLRUPages;
 import server.cache.PageManager;
@@ -31,7 +32,7 @@ import server.cache.SlabCache;
 /**
  *
  */
-public class MemcachedFixedSizeSlabLRUPagesTest {
+public class MemcachedFixedSizeSlabLRUPagesTest extends AbstractTest {
     private final int pageCount = 10;
     private final long maxGlobalCacheSize =
             pageCount * PageManager.getPageSize();

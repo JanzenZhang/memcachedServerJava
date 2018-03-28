@@ -22,6 +22,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import server.AbstractTest;
 import server.cache.CacheValue;
 import server.cache.PageManager;
 import server.cache.SlabCache;
@@ -29,7 +30,7 @@ import server.cache.SlabCache;
 /**
  *
  */
-public class SlabCacheTest {
+public class SlabCacheTest extends AbstractTest {
     private static final int PAGE_COUNT = 10;
     private static final long MAX_GLOBAL_CACHE_SIZE =
             PAGE_COUNT * PageManager.getPageSize();

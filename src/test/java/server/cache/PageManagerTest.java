@@ -17,6 +17,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import server.AbstractTest;
 import server.cache.Page;
 import server.cache.PageManager;
 
@@ -25,7 +26,7 @@ import server.cache.PageManager;
  *
  * @author Dilip Simha
  */
-public class PageManagerTest {
+public class PageManagerTest extends AbstractTest {
     PageManager pageManager;
 
     @Rule

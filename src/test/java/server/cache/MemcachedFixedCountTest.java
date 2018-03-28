@@ -18,25 +18,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
+
+import server.AbstractTest;
 
 /**
  */
-public class MemcachedFixedCountTest {
+public class MemcachedFixedCountTest extends AbstractTest {
     MemcachedFixedCount cache;
-
-    @Before
-    public void setUp() {
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @After
-    public void tearDown() throws Exception {
-    }
 
     /**
      * Test method for {@link server.cache.MemcachedFixedCount#get(java.lang.String)}.
@@ -67,7 +56,7 @@ public class MemcachedFixedCountTest {
             }
         }
     }
-    
+
     /**
      * Test method for {@link server.cache.MemcachedFixedCount#get(java.lang.String)}.
      */
@@ -87,6 +76,7 @@ public class MemcachedFixedCountTest {
         CacheValue dummyValue = cache.get(key + "-dummy");
         assert (dummyValue == null);
     }
+    
 
     private static String generateRandomKey(ArrayList<String> keys) {
         int randomElementIndex = ThreadLocalRandom.current().nextInt(

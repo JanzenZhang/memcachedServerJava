@@ -50,7 +50,7 @@ public final class MemcachedFixedCount implements Cache {
             instance = new MemcachedFixedCount(maxCacheSize);
         }
         assert (instance.maxCacheSize == maxCacheSize);
-        LOGGER.finest("singleton instance created");
+        LOGGER.finest("singleton instance created: " + maxCacheSize);
 
         return instance;
     }
