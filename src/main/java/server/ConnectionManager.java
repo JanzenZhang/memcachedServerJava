@@ -15,6 +15,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -117,51 +119,72 @@ public final class ConnectionManager extends AbstractIdleService {
         serverSocket.register(selector, SelectionKey.OP_ACCEPT);
     }
 
+    private void handleNewConnections(final SelectionKey key)
+            throws IOException {
+        ServerSocketChannel serverSocketChannel =
+                (ServerSocketChannel) key.channel();
+        SocketChannel client = serverSocketChannel.accept();
+        assert (client != null);
+        LOGGER.finer("Accepted client request: "
+                + client.socket().getLocalAddress() + " : "
+                + client.socket().getLocalPort());
+        client.configureBlocking(false);
+        client.register(selector, SelectionKey.OP_READ);
+    }
+
+    private void handleReadRequest(final SelectionKey key) {
+        LOGGER.finest("Thread: "
+                + Thread.currentThread().getId()
+                + " : client request for READ: ");
+        // Until data on this channel is consumed, do not
+        // fire any more read events.
+        key.interestOps(0);
+        SocketChannel socketChannel =
+                (SocketChannel) key.channel();
+        workerThreads.execute(new CommandProcessor(
+                cacheManager, socketChannel, key));
+    }
+
     public void listenToSockets() {
-        LOGGER.finest("ConnectionManager listenToSockets:");
+        LOGGER.info("ConnectionManager listening ...");
         while (true) {
             try {
                 // Blocking call
                 int ready = selector.select(SELECTOR_TIMEOUT_MS);
+                if (!selector.isOpen()) {
+                    // Shutdown closed the selector and hence stop this
+                    // infinite loop.
+                    LOGGER.finest("listenToSockets: selector closed");
+                    break;
+                }
                 if (ready != 0) {
-                    Set<SelectionKey> keys = selector.selectedKeys();
-                    Iterator<SelectionKey> keyIterator = keys.iterator();
-                    while (keyIterator.hasNext()) {
-                        SelectionKey key = keyIterator.next();
-                        if (key.isAcceptable()) {
-                            ServerSocketChannel serverSocketChannel =
-                                    (ServerSocketChannel) key.channel();
-                            SocketChannel client =
-                                    serverSocketChannel.accept();
-                            assert (client != null);
-                            LOGGER.finest("Accepted client request: "
-                                    + client.socket().getLocalAddress() + " : "
-                                    + client.socket().getLocalPort());
-                            client.configureBlocking(false);
-                            client.register(selector, SelectionKey.OP_READ);
-                        } else if (key.isReadable()) {
-                            LOGGER.finest("Thread: "
-                                    + Thread.currentThread().getId()
-                                    + " : client request for READ: ");
-                            // Until data on this channel is consumed, do not
-                            // fire any more read events.
-                            key.interestOps(0);
-                            SocketChannel socketChannel =
-                                    (SocketChannel) key.channel();
-                            workerThreads.execute(new CommandProcessor(
-                                    cacheManager, socketChannel, key));
-                        } else if (key.isWritable()) {
-                            LOGGER.severe("client request for WRITE"
-                                    + " not yet supported.");
-                            assert (false);
-                        } else {
-                            LOGGER.severe("client request for invalid type: "
-                                    + key.readyOps());
-                            assert (false);
+                    // Protect selector.keys() using selector as the key set
+                    // is not thread-safe.
+                    synchronized (selector) {
+                        Set<SelectionKey> keys = selector.selectedKeys();
+                        if (keys == null) {
+                            continue;
                         }
-                        keyIterator.remove();
+                        Iterator<SelectionKey> keyIterator = keys.iterator();
+                        while (keyIterator.hasNext()) {
+                            SelectionKey key = keyIterator.next();
+                            if (key.isAcceptable()) {
+                                handleNewConnections(key);
+                            } else if (key.isReadable()) {
+                                handleReadRequest(key);
+                            } else if (key.isWritable()) {
+                                LOGGER.severe("client request for WRITE"
+                                        + " not yet supported.");
+                                assert (false);
+                            } else {
+                                LOGGER.severe("client request for invalid"
+                                        + " type: " + key.readyOps());
+                                assert (false);
+                            }
+                            keyIterator.remove();
+                        }
+                        keys.clear();
                     }
-                    keys.clear();
                 } else {
                     Thread.yield();
                 }
@@ -172,10 +195,11 @@ public final class ConnectionManager extends AbstractIdleService {
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClosedSelectorException e) {
-                LOGGER.finest("Time to wrap up. Bye bye to listenToSockets");
+                // Shutdown closed this selector. Gracefully break out.
                 break;
             }
         }
+        LOGGER.info("ConnectionManager stopped listening");
     }
 
     @Override
@@ -190,26 +214,39 @@ public final class ConnectionManager extends AbstractIdleService {
         LOGGER.finest("Connection Manager started");
     }
 
+    /**
+     * Shutdown the ConnectionManager service gracefully.
+     * First close the selector, stopping new connections.
+     * Then cancel the already registered channels from the selector.
+     * Then wait for worker threads that are currently handling requests.
+     * Finally, close all channels and terminate this service.
+     */
     @Override
     protected void shutDown() throws InterruptedException, IOException {
-        LOGGER.finest("Connection Manager shutting down ...");
+        LOGGER.info("Connection Manager shutting down ...");
+        // First close the server socket so that new connections are not made.
         if (serverSocket != null) {
             serverSocket.close();
         }
+        List<SocketChannel> channelsToRemove = new LinkedList<>();
 
-        Iterator<SelectionKey> keys = this.selector.keys().iterator();
-        while (keys.hasNext()) {
-            SelectionKey key = keys.next();
-            SelectableChannel channel = key.channel();
-            if (channel instanceof SocketChannel) {
-                SocketChannel socketChannel = (SocketChannel) channel;
-                Socket socket = socketChannel.socket();
-                String remoteHost = socket.getRemoteSocketAddress().toString();
-                LOGGER.finest("closing socket: " + remoteHost);
-                socketChannel.close();
-                key.cancel();
-            } else {
-                key.cancel();
+        // Protect selector.keys() using selector as the key set is not
+        // thread-safe.
+        synchronized (selector) {
+            Set<SelectionKey> keys = selector.selectedKeys();
+            if (keys != null) {
+                Iterator<SelectionKey> keyIterator = keys.iterator();
+                while (keyIterator.hasNext()) {
+                    SelectionKey key = keyIterator.next();
+                    SelectableChannel channel = key.channel();
+                    if (channel instanceof SocketChannel) {
+                        SocketChannel socketChannel = (SocketChannel) channel;
+                        channelsToRemove.add(socketChannel);
+                        key.cancel();
+                    } else {
+                        key.cancel();
+                    }
+                }
             }
         }
         selector.close();
@@ -225,6 +262,16 @@ public final class ConnectionManager extends AbstractIdleService {
             LOGGER.warning("Executor cannot be shut down within"
                     + " timeout: 1 min");
         }
-        LOGGER.finest("Connection Manager shut down");
+
+        // Now close connections to all clients.
+        for (SocketChannel client : channelsToRemove) {
+            Socket socket = client.socket();
+            String remoteHost = socket.getRemoteSocketAddress().toString();
+            LOGGER.finest("closing socket: " + remoteHost);
+            client.close();
+        }
+        channelsToRemove.clear();
+
+        LOGGER.info("Connection Manager shut down");
     }
 }
