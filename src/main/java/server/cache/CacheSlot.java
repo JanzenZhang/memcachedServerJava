@@ -61,14 +61,12 @@ public final class CacheSlot {
     }
 
     public void lock() throws InterruptedException {
-//        assert(! isLocked());
         sem.acquire();
         LOGGER.finest("CacheSlot locked: " + this);
     }
 
     private boolean isLocked() {
-        int availablePermits = sem.availablePermits();
-        return (availablePermits == 0);
+        return (sem.availablePermits() == 0);
     }
 
     public void unlock() {

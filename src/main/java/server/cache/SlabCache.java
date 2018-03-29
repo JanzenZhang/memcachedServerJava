@@ -6,10 +6,9 @@ package server.cache;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -26,19 +25,18 @@ public final class SlabCache implements Cache {
 
     private final Slab slab;
 
-    private final ConcurrentHashMap<String, CacheSlot> slabCacheMap;
+    // Always protect accesses to this map by synchronizing on this map itself.
+    // Remember to unlock while serializing and deserializing on CacheSlot.
+    private final HashMap<String, CacheSlot> slabCacheMap;
 
     // Stores references to keys in map, ordered by least recently used
-    // accesses.
+    // accesses. Always protected by synchronizing on slabCacheMap.
     private Queue<String> lruKeyList;
-
-    private Semaphore lruKeyListSemaphore;
 
     public SlabCache(final int slotSize, final PageManager pageManager) {
         this.slab = new Slab(slotSize, pageManager);
-        this.slabCacheMap = new ConcurrentHashMap<>();
+        this.slabCacheMap = new HashMap<>();
         this.lruKeyList = new LinkedList<>();
-        this.lruKeyListSemaphore = new Semaphore(1);
 
         LOGGER.finest("Slabcache instance created: " + slotSize);
     }
@@ -57,16 +55,12 @@ public final class SlabCache implements Cache {
                 return null;
             }
             cacheSlot.lock();
+
+            // Reinsert the key at head.
+            boolean isRemove = lruKeyList.remove(key);
+            assert (isRemove);
+            lruKeyList.add(key);
         }
-
-        lruKeyListSemaphore.acquire();
-
-        // Reinsert the key at head.
-        boolean isRemove = lruKeyList.remove(key);
-        assert (isRemove);
-        lruKeyList.add(key);
-
-        lruKeyListSemaphore.release();
 
         final Slab slab1 = cacheSlot.getSlab();
         assert (slab1 == this.slab);
@@ -98,7 +92,7 @@ public final class SlabCache implements Cache {
 
         CacheSlot cacheSlot;
         synchronized (slabCacheMap) {
-            cacheSlot = slabCacheMap.get(key);
+            cacheSlot = slabCacheMap.remove(key);
 
             // reuse the cacheSlot to store new value.
             if (cacheSlot == null) {
@@ -107,26 +101,33 @@ public final class SlabCache implements Cache {
                 if (cacheSlot == null) {
                     LOGGER.finest("LRU kicked in slab: " + getSlotSize());
                     // All memory exhausted. Evict one and reuse it.
-                    lruKeyListSemaphore.acquire();
                     if (lruKeyList.isEmpty()) {
                         // This can happen when other slabs have taken up all
                         // the required memory before even the first request is
                         // made on this slab.
                         LOGGER.finest("SlabCache set failing to cache"
                                 + " because of lack of memory. Key: " + key);
-                        lruKeyListSemaphore.release();
                         return false;
                     }
 
                     final String rKey = lruKeyList.remove();
                     cacheSlot = slabCacheMap.remove(rKey);
-                    lruKeyListSemaphore.release();
                 }
+            } else {
+                // Remove the existing entry in list and reinsert it
+                // once the new value is mapped.
+                boolean isRemoved = lruKeyList.remove(key);
+                assert (isRemoved);
             }
+
             assert (cacheSlot != null);
+            // Its important to take this lock because there could be a get
+            // request processing this cache slot in parallel. Once its done
+            // it will release cache slot lock and then its all mine.
             cacheSlot.lock();
         }
 
+        // Nobody other than me has any reference to this cacheSlot now.
         // Use the cacheSlot to store new value.
         final Slab slab1 = cacheSlot.getSlab();
         assert (slab1 == this.slab);
@@ -147,19 +148,21 @@ public final class SlabCache implements Cache {
             LOGGER.severe(e.getMessage());
             return false;
         } finally {
+            // Unlock to maintain locking order.
+            cacheSlot.unlock();
             synchronized (slabCacheMap) {
                 lruKeyList.add(key);
                 slabCacheMap.put(key, cacheSlot);
             }
-            cacheSlot.unlock();
         }
     }
 
     @VisibleForTesting
     int getCacheSize() {
-        assert (slabCacheMap.size() == lruKeyList.size());
-
-        return slabCacheMap.size();
+        synchronized (slabCacheMap) {
+            assert (slabCacheMap.size() == lruKeyList.size());
+            return slabCacheMap.size();
+        }
     }
 
     @VisibleForTesting
