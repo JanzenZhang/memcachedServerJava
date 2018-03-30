@@ -12,11 +12,10 @@ import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,8 +29,8 @@ import com.google.common.util.concurrent.Service;
  * cache behavior.
  */
 public class ConnectionManagerTest extends AbstractTest {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            ConnectionManagerTest.class);
 
     private CacheManager cacheManager;
 
@@ -50,11 +49,6 @@ public class ConnectionManagerTest extends AbstractTest {
 
     @Before
     public void setUp() throws IOException {
-        Level level = Level.ALL;
-        for(Handler h : java.util.logging.Logger.getLogger("").getHandlers()) {
-            h.setLevel(level);
-        }
-
         cacheManager = CacheManager.getInstance();
         connectionManager = ConnectionManager.getInstance(cacheManager);
     }
@@ -98,9 +92,9 @@ public class ConnectionManagerTest extends AbstractTest {
         assert(data.position() == 0);
         while (data.hasRemaining()) {
             int n = socketChannel.write(data);
-            LOGGER.finest("Wrote bytes: " + n);
+            LOGGER.trace("Wrote bytes: " + n);
         }
-        LOGGER.finest("Wrote to server: " + new String(data.array(), charset));
+        LOGGER.trace("Wrote to server: " + new String(data.array(), charset));
         data.clear();
     }
 
@@ -112,7 +106,7 @@ public class ConnectionManagerTest extends AbstractTest {
      */
     private byte[] readBytesFromChannel(SocketChannel socketChannel,
             final int bytesToRead) throws IOException {
-        assert(bytesToRead != 0);
+        assert (bytesToRead != 0);
 
         int bytesRead;
         int totalBytesRead = 0;
@@ -128,7 +122,7 @@ public class ConnectionManagerTest extends AbstractTest {
                 Thread.yield();
                 continue;
             } else if (bytesRead == -1) {
-                LOGGER.finest("Server abruptly closed the connection" +
+                LOGGER.warn("Server abruptly closed the connection" +
                         " while request was being processed!");
                 return null;
             }
@@ -138,7 +132,7 @@ public class ConnectionManagerTest extends AbstractTest {
                 break;
             }
         }
-        LOGGER.finest("totalBytesRead: " + totalBytesRead);
+        LOGGER.trace("totalBytesRead: " + totalBytesRead);
         return dataBytes;
     }
 
@@ -163,7 +157,7 @@ public class ConnectionManagerTest extends AbstractTest {
         while (true) {
             int bytesRead = socketChannel.read(buf);
             if (bytesRead == 0 || bytesRead == -1) {
-                LOGGER.finest("readBytesFromChannel bytesRead: " + bytesRead);
+                LOGGER.trace("readBytesFromChannel bytesRead: " + bytesRead);
                 break;
             }
             // Enable buf to be read.
@@ -177,7 +171,7 @@ public class ConnectionManagerTest extends AbstractTest {
                 }
             } else if (curDelimIndex != 0) {
                 // Input has partial delimiter and its disallowed by protocol.
-                LOGGER.finest("Invalid server input. Has control characters");
+                LOGGER.debug("Invalid server input. Has control characters");
                 fail("Input cannot have control characters: " +
                     new String(resBuffer.array()));
             } else {
@@ -248,7 +242,7 @@ public class ConnectionManagerTest extends AbstractTest {
 
         String keyStr = "123";
         byte[] keyBytes = keyStr.getBytes(charset);
-        LOGGER.finest("key bytes : " + keyBytes + " length: " + keyBytes.length);
+        LOGGER.trace("key bytes : " + keyBytes + " length: " + keyBytes.length);
         helperSetRequest(socketChannel, keyBytes, /*valueBytes=*/ 12,
                 /*flags=*/ (short)1, /*expTime=*/ 0);
 //        helperSetRequest2(socketChannel, keyStr, /*bytes=*/ 12,
@@ -261,7 +255,7 @@ public class ConnectionManagerTest extends AbstractTest {
         }
 
         final String commandResponse = new String(respBuf, charset);
-        LOGGER.finest("commandResponse: " + commandResponse);
+        LOGGER.trace("commandResponse: " + commandResponse);
 
         assert(commandResponse.equals("STORED"));
     }
@@ -291,7 +285,7 @@ public class ConnectionManagerTest extends AbstractTest {
         }
 
         String commandResponse = new String(respBuf, charset);
-        LOGGER.finest("commandResponse: " + commandResponse);
+        LOGGER.trace("commandResponse: " + commandResponse);
         assert(commandResponse.equals("STORED"));
     }
 
@@ -321,7 +315,7 @@ public class ConnectionManagerTest extends AbstractTest {
         byteBufToSend.put(charset.encode(newLineMarker));
         byteBufToSend.flip();
 
-        LOGGER.finest("Writing get metadata to server: " +
+        LOGGER.trace("Writing get metadata to server: " +
                 new String(byteBufToSend.array()));
         writeToSocket(byteBufToSend, socketChannel);
 
@@ -354,7 +348,7 @@ public class ConnectionManagerTest extends AbstractTest {
         final byte[] keyBytes = keyStr.getBytes(keyCharset);
         final int valueBytes = 100;
         final short flags = 1;
-        LOGGER.finest("set key: " + keyBytes);
+        LOGGER.trace("set key: " + keyBytes);
         final byte[] cachedValue = helperSetRequest(socketChannel, keyBytes,
                 valueBytes, flags, /*expTime=*/ 0);
 
@@ -365,7 +359,7 @@ public class ConnectionManagerTest extends AbstractTest {
         }
 
         String commandResponse = new String(respBuf, charset);
-        LOGGER.finest("commandResponse: " + commandResponse);
+        LOGGER.trace("commandResponse: " + commandResponse);
         assert(commandResponse.equals("STORED"));
 
         // Now issue a get for this set to ensure it's indeed cached.
@@ -382,9 +376,9 @@ public class ConnectionManagerTest extends AbstractTest {
         byteBufToSend.put(charset.encode(newLineMarker));
         byteBufToSend.flip();
 
-        LOGGER.finest("Writing get command to server: " +
+        LOGGER.trace("Writing get command to server: " +
                 new String(byteBufToSend.array()));
-        LOGGER.finest("get key: " + keyBytes);
+        LOGGER.trace("get key: " + keyBytes);
         writeToSocket(byteBufToSend, socketChannel);
 
         // Response format can be either :
@@ -398,9 +392,9 @@ public class ConnectionManagerTest extends AbstractTest {
             fail("Invalid response from server on get command");
         }
         String readBytesStr = new String(readBytes, charset);
-        LOGGER.finest("command first 5 bytes: " + readBytesStr);
+        LOGGER.trace("command first 5 bytes: " + readBytesStr);
         if (readBytesStr.equals("END\r\n")) {
-            LOGGER.finest("Client received END. Cache element not found!");
+            LOGGER.error("Client received END. Cache element not found!");
             fail("Expecting a cache hit, but we have a miss here");
         } else if (readBytesStr.equals("VALUE")) {
             // Ignore whitespace after VALUE
@@ -410,10 +404,10 @@ public class ConnectionManagerTest extends AbstractTest {
         final byte[] storedKeyBytes = readBytesFromChannel(socketChannel,
                 /*delimiterStr=*/ " ");
         String storedKeyStr = new String(storedKeyBytes, charset);
-        LOGGER.finest("received key in get command: " + storedKeyStr);
-        LOGGER.finest("stored Key: " + storedKeyStr + " expected key: " + keyStr);
-        LOGGER.finest("stored Key bytes: " + storedKeyBytes + " expected key bytes: " + keyBytes);
-        LOGGER.finest("stored Key bytes len: " + storedKeyBytes.length +
+        LOGGER.trace("received key in get command: " + storedKeyStr);
+        LOGGER.trace("stored Key: " + storedKeyStr + " expected key: " + keyStr);
+        LOGGER.trace("stored Key bytes: " + storedKeyBytes + " expected key bytes: " + keyBytes);
+        LOGGER.trace("stored Key bytes len: " + storedKeyBytes.length +
                 " expected key bytes len: " + keyBytes.length);
        assert(storedKeyStr.equals(keyStr));
 
@@ -430,11 +424,11 @@ public class ConnectionManagerTest extends AbstractTest {
         }
 
         final short storedFlags = Short.decode(subParts[0]);
-        LOGGER.finest("received flags in get command:: " + storedFlags);
+        LOGGER.trace("received flags in get command:: " + storedFlags);
         assert(storedFlags == flags);
 
         final int storedBytes = Integer.parseInt(subParts[1]);
-        LOGGER.finest("received bytes in get command:: " + storedBytes);
+        LOGGER.trace("received bytes in get command:: " + storedBytes);
         assert(storedBytes == valueBytes);
 
         if (storedBytes != 0) {
@@ -454,7 +448,7 @@ public class ConnectionManagerTest extends AbstractTest {
         }
         String endMarkerStr = new String(endMarker, charset);
 
-        LOGGER.finest("endMarker: " + endMarkerStr);
+        LOGGER.trace("endMarker: " + endMarkerStr);
         assert(endMarkerStr.equals("END\r\n"));
     }
 

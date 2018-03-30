@@ -5,7 +5,9 @@ package server.cache;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of Cache with fixed count and LRU access order.
@@ -13,8 +15,8 @@ import java.util.logging.Logger;
  * storage used. Therefore, it can have a open bound on storage requirement.
  */
 public final class MemcachedFixedCount implements Cache {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            MemcachedFixedCount.class);
 
     private static MemcachedFixedCount instance;
 
@@ -34,7 +36,7 @@ public final class MemcachedFixedCount implements Cache {
             protected boolean removeEldestEntry(
                     final Map.Entry<String, CacheValue> eldest) {
                 if (currentCacheSize == maxCacheSize) {
-                    LOGGER.finest("Cache remove: key: " + eldest.getKey()
+                    LOGGER.trace("Cache remove: key: " + eldest.getKey()
                         + " size: " + currentCacheSize
                             + " value:" + eldest.getValue().getFlag());
                     return true;
@@ -50,7 +52,7 @@ public final class MemcachedFixedCount implements Cache {
             instance = new MemcachedFixedCount(maxCacheSize);
         }
         assert (instance.maxCacheSize == maxCacheSize);
-        LOGGER.finest("singleton instance created: " + maxCacheSize);
+        LOGGER.trace("singleton instance created: " + maxCacheSize);
 
         return instance;
     }
@@ -60,7 +62,7 @@ public final class MemcachedFixedCount implements Cache {
         assert (key != null);
 
         final CacheValue value = cache.get(key);
-        LOGGER.finest("Cache get: key: " + key + " value:" + value);
+        LOGGER.trace("Cache get: key: " + key + " value:" + value);
         return value;
     }
 
@@ -70,7 +72,7 @@ public final class MemcachedFixedCount implements Cache {
         assert (value != null);
 
         cache.put(key, value);
-        LOGGER.finest("Cache put: key: " + key + " size: " + currentCacheSize
+        LOGGER.trace("Cache put: key: " + key + " size: " + currentCacheSize
                 + " value:" + value);
 
         if (currentCacheSize < maxCacheSize) {

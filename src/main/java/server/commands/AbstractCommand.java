@@ -7,14 +7,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import server.CacheManager;
 import server.cache.Cache;
 
 public abstract class AbstractCommand {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            AbstractCommand.class);
 
     private Cache cache;
     private SocketChannel socketChannel;
@@ -37,7 +39,7 @@ public abstract class AbstractCommand {
 
         while (data.hasRemaining()) {
             int n = socketChannel.write(data);
-            LOGGER.finest("Wrote bytes: " + n);
+            LOGGER.trace("Wrote bytes: " + n);
         }
         data.clear();
     }

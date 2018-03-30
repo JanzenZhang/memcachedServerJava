@@ -5,7 +5,9 @@ package server.cache;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Slab maintains pages in its private pool. Pages are fetched from PageManager
@@ -15,8 +17,7 @@ import java.util.logging.Logger;
  * SlabCache extends each slab into its own mini cache.
  */
 public final class Slab {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(Slab.class);
 
     /**
      * Size of cache slots in bytes. This slab will hold elements of size
@@ -60,7 +61,7 @@ public final class Slab {
      *          available.
      */
     public synchronized CacheSlot getSlot() {
-        LOGGER.finest("getSlot : " + slotSize + " freeSLots: "
+        LOGGER.trace("getSlot : " + slotSize + " freeSLots: "
                 + freeCacheSlotList.size());
         if (freeCacheSlotList.isEmpty()) {
             if (!isGlobalPoolEmpty) {
@@ -68,8 +69,8 @@ public final class Slab {
                 if (newPage != null) {
                     addToFreeSlotOffsetList(newPage);
                 } else {
-                    LOGGER.finest("Global Pool marked empty");
                     isGlobalPoolEmpty = true;
+                    LOGGER.debug("Global Pool marked empty");
                 }
             }
         }

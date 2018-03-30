@@ -5,7 +5,9 @@ package server.cache;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
@@ -16,8 +18,8 @@ import com.google.common.base.Preconditions;
  * TODO : Manage page reclamation logic.
  */
 public final class PageManager {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            PageManager.class);
 
     private final long maxGlobalCacheSize;
 
@@ -49,7 +51,7 @@ public final class PageManager {
             instance = new PageManager(maxGlobalCacheSize);
         }
         assert (instance.maxGlobalCacheSize == maxGlobalCacheSize);
-        LOGGER.finest("PageManager singleton instance created");
+        LOGGER.debug("PageManager singleton instance created");
 
         return instance;
     }
@@ -59,7 +61,7 @@ public final class PageManager {
      * @return new page if available, null otherwise
      */
     public synchronized Page getPage() {
-        LOGGER.finest("getPage: " + pagePool.size());
+        LOGGER.trace("getPage: " + pagePool.size());
         return pagePool.poll();
     }
 

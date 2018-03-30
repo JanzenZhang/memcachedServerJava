@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import server.CacheManager;
 import server.cache.CacheValue;
@@ -17,8 +19,8 @@ import server.cache.CacheValue;
  * Upon fetching the necessary item from client socket, write it out to cache.
  */
 public class CommandSet extends AbstractCommand {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            CommandSet.class);
 
     public CommandSet(final CacheManager cacheManager,
             final SocketChannel socketChannel) {
@@ -39,12 +41,12 @@ public class CommandSet extends AbstractCommand {
         } else {
             respondToClient(CommandSetResponse.NOT_STORED);
         }
-        LOGGER.finest("Responded to client for key: " + request.key);
+        LOGGER.trace("Responded to client for key: " + request.key);
     }
 
     private void respondToClient(final CommandSetResponse response)
             throws IOException {
-        LOGGER.finest("responding to client...");
+        LOGGER.trace("responding to client...");
 
         CharBuffer charBuf;
         if (response == CommandSetResponse.STORED) {

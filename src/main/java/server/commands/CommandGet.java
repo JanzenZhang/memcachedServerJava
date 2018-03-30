@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import server.CacheManager;
 import server.cache.CacheValue;
@@ -17,8 +19,8 @@ import server.cache.CacheValue;
  * Upon fetching the necessary item from cache, write it out to client socket.
  */
 public final class CommandGet extends AbstractCommand {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            CommandGet.class);
 
     public CommandGet(final CacheManager cacheManager,
             final SocketChannel socketChannel) {
@@ -27,16 +29,16 @@ public final class CommandGet extends AbstractCommand {
 
     void process(final CommandGetRequest request)
             throws IOException, InterruptedException {
-        LOGGER.finest("processing ...");
+        LOGGER.trace("processing ...");
         byte[] keyBytes = request.getKey();
 
         String key = new String(keyBytes, AbstractCommand.CHARSET);
         CacheValue value = getCache().get(key);
         if (value != null) {
-            LOGGER.finest("cache fetched for key: " + key + " value: "
+            LOGGER.trace("cache fetched for key: " + key + " value: "
                     + value.getFlag());
         } else {
-            LOGGER.finest("cache cannot fetch for key: " + key);
+            LOGGER.trace("cache cannot fetch for key: " + key);
         }
         respondToClient(keyBytes, value);
     }
@@ -49,7 +51,7 @@ public final class CommandGet extends AbstractCommand {
      */
     void respondToClient(final byte[] key, final CacheValue value)
             throws IOException {
-        LOGGER.finest("responding to client...");
+        LOGGER.trace("responding to client...");
         CharBuffer cbuf;
         final String newLineMarker = "\r\n";
         final String endMarker = "END";
@@ -74,8 +76,8 @@ public final class CommandGet extends AbstractCommand {
             metadata.put(CHARSET.encode(newLineMarker));
             metadata.flip();
 
-            LOGGER.finest("keyBytes: " + key);
-            LOGGER.finest("responded to client: "
+            LOGGER.trace("keyBytes: " + key);
+            LOGGER.trace("responded to client: "
                     + new String(metadata.array(), AbstractCommand.CHARSET));
             writeToSocket(metadata);
             metadata = null;
@@ -85,7 +87,7 @@ public final class CommandGet extends AbstractCommand {
         ByteBuffer endMarkBuf = CHARSET.encode(cbuf);
         writeToSocket(endMarkBuf);
         endMarkBuf = null;
-        LOGGER.finest("Responded to client for key: "
+        LOGGER.trace("Responded to client for key: "
                 + new String(key, AbstractCommand.CHARSET));
     }
 }

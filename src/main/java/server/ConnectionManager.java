@@ -24,7 +24,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 
@@ -43,8 +45,8 @@ import server.commands.CommandProcessor;
  *  mandate.
  */
 public final class ConnectionManager extends AbstractIdleService {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            ConnectionManager.class);
 
     private static ConnectionManager instance;
 
@@ -82,14 +84,14 @@ public final class ConnectionManager extends AbstractIdleService {
         workerTasksQueue = new ArrayBlockingQueue<>(
                 MAX_CONCURRENT_REQUESTS);
         maximumWorkerPoolSize = Runtime.getRuntime().availableProcessors();
-        LOGGER.finest("maximumWorkerPoolSize: " + maximumWorkerPoolSize);
+        LOGGER.trace("maximumWorkerPoolSize: " + maximumWorkerPoolSize);
         coreWorkerPoolSize = Math.max(1, maximumWorkerPoolSize / 2);
         workerThreads = new ThreadPoolExecutor(coreWorkerPoolSize,
                 maximumWorkerPoolSize, KEEP_ALIVE_TIME, TimeUnit.MINUTES,
                 workerTasksQueue);
 
         configureServerSocket();
-        LOGGER.finest("ConnectionManager singleton instance created");
+        LOGGER.trace("ConnectionManager singleton instance created");
     }
 
     public static ConnectionManager getInstance(
@@ -125,7 +127,7 @@ public final class ConnectionManager extends AbstractIdleService {
                 (ServerSocketChannel) key.channel();
         SocketChannel client = serverSocketChannel.accept();
         assert (client != null);
-        LOGGER.finer("Accepted client request: "
+        LOGGER.trace("Accepted client request: "
                 + client.socket().getLocalAddress() + " : "
                 + client.socket().getLocalPort());
         client.configureBlocking(false);
@@ -133,7 +135,7 @@ public final class ConnectionManager extends AbstractIdleService {
     }
 
     private void handleReadRequest(final SelectionKey key) {
-        LOGGER.finest("Thread: "
+        LOGGER.trace("Thread: "
                 + Thread.currentThread().getId()
                 + " : client request for READ: ");
         // Until data on this channel is consumed, do not
@@ -154,7 +156,7 @@ public final class ConnectionManager extends AbstractIdleService {
                 if (!selector.isOpen()) {
                     // Shutdown closed the selector and hence stop this
                     // infinite loop.
-                    LOGGER.finest("listenToSockets: selector closed");
+                    LOGGER.debug("listenToSockets: selector closed");
                     break;
                 }
                 if (ready != 0) {
@@ -173,11 +175,11 @@ public final class ConnectionManager extends AbstractIdleService {
                             } else if (key.isReadable()) {
                                 handleReadRequest(key);
                             } else if (key.isWritable()) {
-                                LOGGER.severe("client request for WRITE"
+                                LOGGER.error("client request for WRITE"
                                         + " not yet supported.");
                                 assert (false);
                             } else {
-                                LOGGER.severe("client request for invalid"
+                                LOGGER.error("client request for invalid"
                                         + " type: " + key.readyOps());
                                 assert (false);
                             }
@@ -189,7 +191,7 @@ public final class ConnectionManager extends AbstractIdleService {
                     Thread.yield();
                 }
             } catch (AsynchronousCloseException e) {
-                LOGGER.finest("Multiple test threads working on same channel."
+                LOGGER.trace("Multiple test threads working on same channel."
                         + " Safe to stop here.");
                 break;
             } catch (IOException e) {
@@ -204,14 +206,14 @@ public final class ConnectionManager extends AbstractIdleService {
 
     @Override
     protected void startUp() {
-        LOGGER.finest("Connection Manager starting ...");
+        LOGGER.trace("Connection Manager starting ...");
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 listenToSockets();
             }
         });
-        LOGGER.finest("Connection Manager started");
+        LOGGER.trace("Connection Manager started");
     }
 
     /**
@@ -223,7 +225,7 @@ public final class ConnectionManager extends AbstractIdleService {
      */
     @Override
     protected void shutDown() throws InterruptedException, IOException {
-        LOGGER.info("Connection Manager shutting down ...");
+        LOGGER.debug("Connection Manager shutting down ...");
         // First close the server socket so that new connections are not made.
         if (serverSocket != null) {
             serverSocket.close();
@@ -253,13 +255,13 @@ public final class ConnectionManager extends AbstractIdleService {
 
         workerThreads.shutdown();
         if (!workerThreads.awaitTermination(1, TimeUnit.MINUTES)) {
-            LOGGER.warning("WorkerThreads cannot be shut down within"
+            LOGGER.warn("WorkerThreads cannot be shut down within"
                     + " timeout: 1 min");
         }
 
         executor.shutdown();
         if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
-            LOGGER.warning("Executor cannot be shut down within"
+            LOGGER.warn("Executor cannot be shut down within"
                     + " timeout: 1 min");
         }
 
@@ -267,7 +269,7 @@ public final class ConnectionManager extends AbstractIdleService {
         for (SocketChannel client : channelsToRemove) {
             Socket socket = client.socket();
             String remoteHost = socket.getRemoteSocketAddress().toString();
-            LOGGER.finest("closing socket: " + remoteHost);
+            LOGGER.trace("closing socket: " + remoteHost);
             client.close();
         }
         channelsToRemove.clear();

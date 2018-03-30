@@ -9,7 +9,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -20,8 +22,8 @@ import com.google.common.annotations.VisibleForTesting;
  * pages.
  */
 public final class SlabCache implements Cache {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            SlabCache.class);
 
     private final Slab slab;
 
@@ -38,19 +40,19 @@ public final class SlabCache implements Cache {
         this.slabCacheMap = new HashMap<>();
         this.lruKeyList = new LinkedList<>();
 
-        LOGGER.finest("Slabcache instance created: " + slotSize);
+        LOGGER.trace("Slabcache instance created: " + slotSize);
     }
 
     @Override
     public CacheValue get(final String key) throws InterruptedException {
-        LOGGER.finest("slabcache: " + getSlotSize() + " size: "
+        LOGGER.trace("slabcache: " + getSlotSize() + " size: "
                 + slabCacheMap.size());
 
         CacheSlot cacheSlot;
         synchronized (slabCacheMap) {
             cacheSlot = slabCacheMap.get(key);
             if (cacheSlot == null) {
-                LOGGER.finest("key: " + key + " not found in slabcache: "
+                LOGGER.trace("key: " + key + " not found in slabcache: "
                         + getSlotSize());
                 return null;
             }
@@ -72,11 +74,11 @@ public final class SlabCache implements Cache {
         buf.limit(offset + slab.getSlotSize());
         try {
             CacheValue cacheValue = CacheValue.deserialize(buf);
-            LOGGER.finest("key: " + key + " found in slabcache: "
+            LOGGER.trace("key: " + key + " found in slabcache: "
                     + getSlotSize());
             return cacheValue;
         } catch (BufferUnderflowException e) {
-            LOGGER.severe(e.getMessage());
+            LOGGER.error(e.getMessage());
             return null;
         } finally {
             cacheSlot.unlock();
@@ -99,13 +101,13 @@ public final class SlabCache implements Cache {
                 // Get either a new CacheSlot or reuse one from LRU.
                 cacheSlot = slab.getSlot();
                 if (cacheSlot == null) {
-                    LOGGER.finest("LRU kicked in slab: " + getSlotSize());
+                    LOGGER.trace("LRU kicked in slab: " + getSlotSize());
                     // All memory exhausted. Evict one and reuse it.
                     if (lruKeyList.isEmpty()) {
                         // This can happen when other slabs have taken up all
                         // the required memory before even the first request is
                         // made on this slab.
-                        LOGGER.finest("SlabCache set failing to cache"
+                        LOGGER.trace("SlabCache set failing to cache"
                                 + " because of lack of memory. Key: " + key);
                         return false;
                     }
@@ -140,12 +142,12 @@ public final class SlabCache implements Cache {
         buf.limit(offset + slab.getSlotSize());
         try {
             CacheValue.serialize(value, buf);
-            LOGGER.finest("Key: " + key + " set in slabCache: "
+            LOGGER.trace("Key: " + key + " set in slabCache: "
                     + getSlotSize());
-            LOGGER.finest("Size of slabcache: " + slabCacheMap.size());
+            LOGGER.trace("Size of slabcache: " + slabCacheMap.size());
             return true;
         } catch (BufferOverflowException e) {
-            LOGGER.severe(e.getMessage());
+            LOGGER.error(e.getMessage());
             return false;
         } finally {
             // Unlock to maintain locking order.

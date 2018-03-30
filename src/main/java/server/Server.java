@@ -4,7 +4,9 @@
 package server;
 
 import java.io.IOException;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.util.concurrent.Service;
 
@@ -14,8 +16,7 @@ import com.google.common.util.concurrent.Service;
  * ensures graceful shutdown upon termination.
  */
 public final class Server {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(Server.class);
 
     private static Server instance;
 
@@ -26,7 +27,7 @@ public final class Server {
     private Server() throws IOException {
         cacheManager = CacheManager.getInstance();
         connectionManager = ConnectionManager.getInstance(cacheManager);
-        LOGGER.finest("Memcached server singleton instance created");
+        LOGGER.trace("Memcached server singleton instance created");
     }
 
     public static Server getInstance() throws IOException {
@@ -54,6 +55,6 @@ public final class Server {
         LOGGER.info("Memcached server starting ...");
         Server server = getInstance();
         server.init();
-        LOGGER.finer("Memcached server started");
+        LOGGER.info("Memcached server started");
     }
 }

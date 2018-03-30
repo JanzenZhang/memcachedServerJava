@@ -7,13 +7,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import server.CacheManager;
 
 public final class CommandError extends AbstractCommand {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            CommandError.class);
 
     public CommandError(final CacheManager cacheManager,
             final SocketChannel socketChannel) {
@@ -25,7 +27,7 @@ public final class CommandError extends AbstractCommand {
         assert (status != null);
         //errorMsg can be null for status=ERROR
 
-        LOGGER.finest("responding error message to client...");
+        LOGGER.trace("responding error message to client...");
 
         CharBuffer charBuf = null;
         if (status.equals("ERROR")) {
@@ -35,7 +37,7 @@ public final class CommandError extends AbstractCommand {
         } else if (status.equals("SERVER_ERROR")) {
             charBuf = CharBuffer.wrap(status + " " + errorMsg + "\r\n");
         } else {
-            LOGGER.severe("Invalid status: " + status);
+            LOGGER.error("Invalid status: " + status);
             assert (false);
         }
 

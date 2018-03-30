@@ -4,7 +4,9 @@
 package server.cache;
 
 import java.util.concurrent.Semaphore;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Cache Slot to hold data. This is a fixed memory sized object in a Page.
@@ -13,8 +15,8 @@ import java.util.logging.Logger;
  * Before locking a cache slot, take lock on slabcache's map.
  */
 public final class CacheSlot {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            CacheSlot.class);
 
     /** The slab that owns this cacheSlot. */
     private final Slab slab;
@@ -62,7 +64,7 @@ public final class CacheSlot {
 
     public void lock() throws InterruptedException {
         sem.acquire();
-        LOGGER.finest("CacheSlot locked: " + this);
+        LOGGER.trace("CacheSlot locked: " + this);
     }
 
     private boolean isLocked() {
@@ -71,7 +73,7 @@ public final class CacheSlot {
 
     public void unlock() {
         assert (isLocked());
-        LOGGER.finest("CacheSlot unlocked: " + this);
+        LOGGER.trace("CacheSlot unlocked: " + this);
         sem.release();
     }
 }

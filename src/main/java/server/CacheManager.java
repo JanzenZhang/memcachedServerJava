@@ -3,20 +3,22 @@
  */
 package server;
 
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import server.cache.Cache;
 import server.cache.MemcachedFixedCount;
 import server.cache.MemcachedFixedSizeSlabLRU;
 import server.cache.MemcachedFixedSizeSlabLRUPages;
 import server.cache.MemcachedFixedSizeStrictLRU;
+import server.cache.PageManager;
 
 /**
  * Cache manager to manage specific implementation of cache. Its a singleton.
  */
 public final class CacheManager {
-    private static final Logger LOGGER = Logger.getLogger(
-            Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Logger LOGGER = LogManager.getLogger(
+            CacheManager.class);
 
     private static CacheManager instance;
 
@@ -38,7 +40,7 @@ public final class CacheManager {
         fixedSizeSlabLRUCache = new MemcachedFixedSizeSlabLRU(MAX_CACHE_SIZE);
         fixedSizeSlabLRUPagesCache =
                 MemcachedFixedSizeSlabLRUPages.getInstance(MAX_CACHE_SIZE);
-        LOGGER.finer("CacheManager singleton instance created");
+        LOGGER.trace("CacheManager singleton instance created");
     }
 
     public static CacheManager getInstance() {
